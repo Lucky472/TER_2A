@@ -4,7 +4,7 @@ EXE=exec
 
 all : $(EXE)
 
-$(EXE) : mod_precision.o mod_maillage.o test.o
+$(EXE) : mod_precision.o mod_maillage.o chaleur.o
 	$(F90) -o $@ $^
 
 %.o : %.f90
