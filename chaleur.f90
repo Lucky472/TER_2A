@@ -11,7 +11,7 @@ program test
     integer, dimension(:, :), allocatable           :: noeud_maille
     real(kind = pr), dimension(:, :), allocatable   :: coord_noeud
 
-    call lecture_maillage('mesh3_3.typ2', S, noeud_maille, coord_noeud)
+    call lecture_maillage('test.typ2', S, noeud_maille, coord_noeud)
 
     do i=1, size(noeud_maille, 1)
         print *, noeud_maille(i, :)
