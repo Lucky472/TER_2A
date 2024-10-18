@@ -1,6 +1,16 @@
 module maillage
 
     use precision
+    use tri_maillage
+
+! ----------------------------------------------------------------------------------------------
+! Module contenant les subroutines pour mod_maillage :
+!       maillage (prochainement)
+!       lecture_maillage
+!       connectivite
+!       aire_maille (prochainement)
+! Module cree a partir du module mod_maillage.f90 cree par Luc Mieussens
+! ----------------------------------------------------------------------------------------------
 
     implicit none
 
@@ -46,5 +56,37 @@ module maillage
             end do
 
         end subroutine lecture_maillage
+
+
+        subroutine connectivite(sommets_maille, S, P, e, ar, trig)
+
+! Tableaux d'entree
+            integer, dimension(:), intent(in)                       :: sommets_maille
+            integer, dimension(:, :), intent(in)                    :: S
+            real(kind = pr), dimension(:, :), intent(in)            :: P
+
+! Sorties de la subroutine :
+!       e : Tableau tel que e(i, 1) et e(i, 2) soient les sommets de l'arete e de
+! la maille i
+!       ar : Tableau contenant le numero des aretes de chaque maille
+! Note : ar(i, 5) = 0 indique que la maille a 4 aretes
+!       trig : numero des mailles ayant en commun l'arete i
+            integer, dimension(:, :), allocatable, intent(out)      :: e, ar, trig
+
+! Variables locales
+            integer                                                 :: nb_noeuds, nb_trig, nb_cotes
+            integer, dimension(:, :), allocatable                   :: flag
+
+! Nombre de noeuds et mailles
+            nb_trig = size(S, 1)
+            nb_noeuds = size(P, 1)
+
+            call fill_flag(sommets_maille, S, P, nb_cotes, flag)
+
+            call fill_e(sommets_maille, S, nb_cotes, flag, e)
+
+            call fill_ar_trig(sommets_maille, S, nb_cotes, flag, ar, trig)
+
+        end subroutine connectivite
     
 end module maillage
