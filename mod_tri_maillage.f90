@@ -9,7 +9,8 @@ module tri_maillage
 !       fill_flag
 !       fill_e
 !       fill_ar_trig
-! Module cree a partir du module mod_maillage.f90 cree par Luc Mieussens
+! Module cree a partir du module mod_maillage.f90 cree par Luc Mieussens :
+! https://www.math.u-bordeaux.fr/~lmieusse/PAGE_WEB/ENSEIGNEMENT/MMK2/VF/TP/mod_maillage.f90
 ! ----------------------------------------------------------------------------------------------
     
     contains

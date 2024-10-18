@@ -9,7 +9,8 @@ module maillage
 !       lecture_maillage
 !       connectivite
 !       aire_maille (prochainement)
-! Module cree a partir du module mod_maillage.f90 cree par Luc Mieussens
+! Module cree a partir du module mod_maillage.f90 cree par Luc Mieussens :
+! https://www.math.u-bordeaux.fr/~lmieusse/PAGE_WEB/ENSEIGNEMENT/MMK2/VF/TP/mod_maillage.f90
 ! ----------------------------------------------------------------------------------------------
 
     implicit none
