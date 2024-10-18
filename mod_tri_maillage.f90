@@ -46,7 +46,7 @@ module tri_maillage
 
 ! Tableau de sortie (contient le numéro de l'arete liant les deux sommets)
             integer, dimension(:, :), allocatable, intent(out)  :: flag
-! Nombre d'aretes (necessaire pour initialiser e)
+! Nombre d'aretes (necessaire pour initialiser e, ar et trig)
             integer, intent(out)                                :: nb_cotes
 
 ! Variables locales (ni correspond aux n1, n2, n3 dans le code de Luc)
