@@ -1,4 +1,4 @@
-program test
+program chaleur
 
     use precision
     use tri_maillage
@@ -14,9 +14,9 @@ program test
 
     call lecture_maillage('TYP2/test.typ2', sommets_maille, noeud_maille, coord_noeud)
 
-    ! do i=1, size(noeud_maille, 1)
-    !     print *, noeud_maille(i, :)
-    ! end do
+    do i=1, size(noeud_maille, 1)
+       print *, noeud_maille(i, :)
+    end do
 
     call fill_flag(sommets_maille, noeud_maille, coord_noeud, nb_cotes, flag)
 
@@ -40,4 +40,4 @@ program test
         print *, ar(i, :)
     end do
     
-end program test
+end program chaleur

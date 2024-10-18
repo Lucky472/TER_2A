@@ -55,7 +55,7 @@ module maillage
             allocate(sommets_maille(1:nb_mailles), noeud_maille(1:nb_mailles, 5))
 
             do i = 1, nb_mailles
-! Lit le nombre de sommets de la maille puis leur numéro
+! Lit le nombre de sommets de la maille puis leur numero
                 read(10, *) sommets_maille(i), noeud_maille(i, 1:sommets_maille(i))
 
             end do
