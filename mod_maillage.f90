@@ -21,7 +21,12 @@ module maillage
 ! Fichier d'entree
             character(len = *), intent(in)                              :: fichier
         
-! Sorties de la subroutine
+! Sorties de la subroutine :
+!       sommets_maille : Tableau tel que sommets_maille(i) = nombre de sommets de la maille i
+!       noeud_maille : Tableau tel que noeud_maille(i, 1:5) sont les au plus 5 sommets de la
+! maille i
+! Note : noeud_maille(i, 5) = 0 lorsque la maille i n'a que 4 sommets
+!       coord_noeud : Tableau tel que coord_noeud(i, 1:2) sont les coordonees du sommet i
             integer, dimension(:), allocatable, intent(out)             :: sommets_maille
             integer, dimension(:, :), allocatable, intent(out)          :: noeud_maille
             real(kind = pr), dimension(: ,:), allocatable, intent(out)  :: coord_noeud
@@ -31,7 +36,7 @@ module maillage
             integer                                                     :: i
 
             open(unit = 10, file = trim(adjustl(fichier)))
-! Lit la première ligne et le nombre de sommets
+! Lit la premiere ligne et le nombre de sommets
             read(10, *)
             read(10, *) nb_noeuds
 

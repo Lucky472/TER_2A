@@ -23,7 +23,7 @@ module tri_maillage
             integer, dimension(:), intent(in)                   :: sommets_maille
             integer, dimension(:, :), intent(in)                :: S
 
-! Sorties de la subroutine les sommets ni = S(k, l) et nj = S(k, l+1)
+! Sorties de la subroutine : les sommets ni = S(k, l) et nj = S(k, l+1)
 ! Retourne nj = S(k, 1) si l = sommets_maille(k)
             integer, intent(out)                                :: ni, nj
 
@@ -44,12 +44,12 @@ module tri_maillage
             integer, dimension(:, :), intent(in)                :: S
             real(kind = pr), dimension(:, :), intent(in)        :: P
 
-! Tableau de sortie (contient le numéro de l'arete liant les deux sommets)
+! Tableau de sortie (contient le numero de l'arete liant les deux sommets)
             integer, dimension(:, :), allocatable, intent(out)  :: flag
 ! Nombre d'aretes (necessaire pour initialiser e, ar et trig)
             integer, intent(out)                                :: nb_cotes
 
-! Variables locales (ni correspond aux n1, n2, n3 dans le code de Luc)
+! Variables locales (ni, nj correspondent aux n1, n2, n3 dans le code de Luc)
             integer                                             :: k, l, ni, nj, nb_trig, nb_noeuds
 
 ! Nombre de mailles
