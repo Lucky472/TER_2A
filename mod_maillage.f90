@@ -79,12 +79,8 @@ module maillage
             integer, dimension(:, :), allocatable, intent(out)      :: e, ar, trig
 
 ! Variables locales
-            integer                                                 :: nb_noeuds, nb_trig, nb_cotes
+            integer                                                 :: nb_cotes
             integer, dimension(:, :), allocatable                   :: flag
-
-! Nombre de noeuds et mailles
-            nb_trig = size(S, 1)
-            nb_noeuds = size(P, 1)
 
             call fill_flag(sommets_maille, S, P, nb_cotes, flag)
 
