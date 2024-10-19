@@ -1,6 +1,6 @@
-module tri_maillage
+module mod_tri_maillage
 
-    use precision
+    use mod_precision
 
     implicit none
 
@@ -155,4 +155,4 @@ module tri_maillage
 
         end subroutine fill_ar_trig
 
-end module tri_maillage
+end module mod_tri_maillage

@@ -1,5 +1,5 @@
-module precision
+module mod_precision
 
     integer, parameter          :: pr = 8
 
-end module precision
+end module mod_precision

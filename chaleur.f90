@@ -1,51 +1,40 @@
 program chaleur
 
-    use precision
-    use tri_maillage
-    use maillage
+    use mod_precision
+    use mod_tri_maillage
+    use mod_maillage
 
     implicit none
 
-    integer                                         :: i, nb_cotes
+    integer                                         :: i, nb_mailles, nb_aretes
 
     integer, dimension(:), allocatable              :: sommets_maille
-    real(kind = pr), dimension(:), allocatable      :: aire_maille
-    integer, dimension(:, :), allocatable           :: noeud_maille, flag, e, ar, trig
-    real(kind = pr), dimension(:, :), allocatable   :: coord_noeud
+    real(kind = pr), dimension(:), allocatable      :: aire_maille, l_arete, d_arete
+    integer, dimension(:, :), allocatable           :: noeud_maille, ar, trig
+    real(kind = pr), dimension(:, :), allocatable   :: coord_noeud, milieu_arete
 
-    call lecture_maillage('TYP2/test.typ2', sommets_maille, noeud_maille, coord_noeud)
 
-    ! do i=1, size(noeud_maille, 1)
-    !    print *, noeud_maille(i, :)
+    call maillage('TYP2/mesh3_1.typ2', nb_mailles, nb_aretes, sommets_maille, noeud_maille, coord_noeud &
+    &             , aire_maille, l_arete, d_arete, milieu_arete, ar, trig)
+
+    ! print *, "aire_maille =" 
+    ! do i = 1, size(aire_maille, 1)
+    !     print *, aire_maille(i)
     ! end do
 
-    call fill_flag(sommets_maille, noeud_maille, coord_noeud, nb_cotes, flag)
-
-    ! print *, "Nombre d'aretes :", nb_cotes
-    ! print *, "flag = "
-    ! do i = 1, size(flag, 1)
-    !     print *, flag(i, :)
+    ! print *, "l_arete =" 
+    ! do i = 1, size(l_arete, 1)
+    !     print *, l_arete(i)
     ! end do
 
-    call fill_e(sommets_maille, noeud_maille, nb_cotes, flag, e)
-
-    ! print *, "e = "
-    ! do i = 1, size(e, 1)
-    !     print *, e(i, :)
+    ! print *, "d_arete =" 
+    ! do i = 1, size(d_arete, 1)
+    !     print *, d_arete(i)
     ! end do
 
-    call fill_ar_trig(sommets_maille, noeud_maille, nb_cotes, flag, ar, trig)
-
-    ! print *, "ar = "
-    ! do i = 1, size(ar, 1)
-    !     print *, ar(i, :)
+    ! print *, "milieu_arete =" 
+    ! do i = 1, size(milieu_arete, 1)
+    !     print *, milieu_arete(i, :)
     ! end do
-
-    call aire(sommets_maille, noeud_maille, coord_noeud, aire_maille)
-
-    print *, "aire_maille = "
-    do i = 1, size(aire_maille, 1)
-        print *, aire_maille(i)
-    end do
     
 end program chaleur
