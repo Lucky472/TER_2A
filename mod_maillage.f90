@@ -10,6 +10,7 @@ module mod_maillage
 !       connectivite
 !       aire
 !       barycentre
+!       cl_arete
 ! Module cree a partir du module mod_maillage.f90 cree par Luc Mieussens :
 ! https://www.math.u-bordeaux.fr/~lmieusse/PAGE_WEB/ENSEIGNEMENT/MMK2/VF/TP/mod_maillage.f90
 ! ----------------------------------------------------------------------------------------------
@@ -19,7 +20,7 @@ module mod_maillage
     contains
 
         subroutine maillage(fichier, nb_mailles, nb_aretes, sommets_maille, S, P, aire_maille &
-        &                   , l_arete, d_arete, milieu_arete, ar, trig, arete_bord)
+        &                   , l_arete, d_arete, milieu_arete, ar, trig, cl_arete_bord)
 
 ! Fichier d'entree
             character(len = *), intent(in)                              :: fichier
@@ -41,9 +42,15 @@ module mod_maillage
 !       trig : Tableau tel que trig(e, 1:2) soient le numero des mailles ayant pour arete commune
 ! l'arete e
 ! Note : trig(e, 2) = 0 lorsque que l'arete e n'a pas de maille adjacente
-!       arete_bord : Tableau tel que arete_bord(e) = e si e est une arete de bord et 0 sinon
+!       cl_arete_bord : Tableau contenant les valeurs entieres suivantes :
+!           - 0 : l'arete e n'est pas une arete de bord
+!           - 10 : l'arete e est soumise a la premiere condition aux limites de Dirichlet
+! (ici Tg)
+!           - 11 : l'arete e est soumise a la seconde condition aux limites de Dirichlet
+! (ici Td)
+!           - 20 : l'arete e est soumise a la condition aux limites de Neumann homogene
             integer, intent(out)                                        :: nb_mailles, nb_aretes
-            integer, dimension(:), allocatable, intent(out)             :: sommets_maille, arete_bord
+            integer, dimension(:), allocatable, intent(out)             :: sommets_maille, cl_arete_bord
             integer, dimension(:, :), allocatable, intent(out)          :: S, ar, trig
             real(kind = pr), dimension(:), allocatable, intent(out)     :: aire_maille, l_arete, d_arete
             real(kind = pr), dimension(:, :), allocatable, intent(out)  :: P, milieu_arete
@@ -107,18 +114,8 @@ module mod_maillage
 
             end do
 
-! Aretes de bord
-            allocate(arete_bord(1:nb_aretes))
-
-            do i = 1, nb_aretes
-
-                if (trig(i, 2) == 0) then
-                    arete_bord(i) = i
-                else
-                    arete_bord(i) = 0
-                end if
-
-            end do
+! Condtions aux limites sur les aretes de bord
+            call cl_arete(P, e, trig, cl_arete_bord)
 
         end subroutine maillage
 
@@ -274,5 +271,54 @@ module mod_maillage
             end do
 
         end subroutine barycentre
+
+
+        subroutine cl_arete(P, e, trig, cl_arete_bord)
+
+! Entrees de la subroutine
+            integer, dimension(:, :), intent(in)                        :: e, trig
+            real(kind = pr), dimension(:, :), intent(in)                :: P
+
+! Sortie de la subroutine :
+!       cl_arete_bord : Tableau contenant les valeurs entieres suivantes :
+!           - 0 : l'arete e n'est pas une arete de bord
+!           - 10 : l'arete e est soumise a la premiere condition aux limites de Dirichlet
+! (ici Tg)
+!           - 11 : l'arete e est soumise a la seconde condition aux limites de Dirichlet
+! (ici Td)
+!           - 20 : l'arete e est soumise a la condition aux limites de Neumann homogene
+            integer, dimension(:), allocatable, intent(out)             :: cl_arete_bord
+
+! Variables locales
+            integer                                                     :: i, nb_aretes, ni, nj
+            real(kind = pr), dimension(2)                               :: ai, aj
+
+            nb_aretes = size(e, 1)
+
+            allocate(cl_arete_bord(1:nb_aretes))
+
+            cl_arete_bord = 0
+
+            do i = 1, nb_aretes
+
+                if (trig(i, 2) == 0) then
+                    ni = e(i, 1) ; nj = e(i, 2)
+                    ai = P(ni, :) ; aj = P(nj, :)
+
+! Teste les differents cotes de maille i
+                    if (ai(1) == 0._pr .and. aj(1) == 0._pr) then           ! Bord gauche
+                        cl_arete_bord(i) = 10
+                    else if (ai(1) == 1._pr .and. aj(1) == 1._pr) then      ! Bord droit
+                        cl_arete_bord(i) = 11
+                    else if (ai(2) == 0._pr .and. aj(2) == 0._pr          & ! Bord bas
+                    &       .or. ai(2) == 1._pr .and. aj(2) == 1._pr) then  ! Bord haut
+                        cl_arete_bord(i) = 20
+                    end if
+
+                end if
+
+            end do
+
+        end subroutine cl_arete
     
 end module mod_maillage

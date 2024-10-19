@@ -3,8 +3,9 @@ module mod_sortie
     use mod_precision
 
 ! ----------------------------------------------------------------------------------------------
-! Module contenant la subroutine de sortie :
+! Module contenant les subroutines de sortie :
 !       sortie
+!       compte_cellule
 ! Module cree a partir du module mod_sortie.f90 cree par Luc Mieussens :
 ! https://www.math.u-bordeaux.fr/~lmieusse/PAGE_WEB/ENSEIGNEMENT/MMK2/VF/TP/mod_sortie.f90
 ! et de la documentation du format VTK :

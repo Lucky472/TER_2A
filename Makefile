@@ -11,4 +11,4 @@ $(EXE) : mod_precision.o mod_tri_maillage.o mod_maillage.o mod_sortie.o chaleur.
 	$(F90) $(FFLAGS) -c $<
 
 clean :
-	rm -f *.mod *.o $(EXE)
+	rm -f *.mod *.o SORTIE/*.vtk $(EXE)
