@@ -5,7 +5,7 @@ module mod_maillage
 
 ! ----------------------------------------------------------------------------------------------
 ! Module contenant les subroutines pour mod_maillage :
-!       maillage (prochainement)
+!       maillage
 !       lecture_maillage
 !       connectivite
 !       aire
