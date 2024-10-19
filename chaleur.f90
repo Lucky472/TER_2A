@@ -42,9 +42,12 @@ program chaleur
     !     print *, trig(i, :)
     ! end do
 
-    print *, "arete_bord"
+    print *, "arete_bord ="
     do i = 1, size(arete_bord)
         print *, arete_bord(i)
     end do
+
+    deallocate(sommets_maille, arete_bord, aire_maille, l_arete, d_arete &
+    &          , noeud_maille, ar, trig, coord_noeud, milieu_arete)
     
 end program chaleur
