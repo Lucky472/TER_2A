@@ -8,7 +8,7 @@ module maillage
 !       maillage (prochainement)
 !       lecture_maillage
 !       connectivite
-!       aire_maille (prochainement)
+!       aire
 ! Module cree a partir du module mod_maillage.f90 cree par Luc Mieussens :
 ! https://www.math.u-bordeaux.fr/~lmieusse/PAGE_WEB/ENSEIGNEMENT/MMK2/VF/TP/mod_maillage.f90
 ! ----------------------------------------------------------------------------------------------
@@ -90,5 +90,43 @@ module maillage
             call fill_ar_trig(sommets_maille, S, nb_cotes, flag, ar, trig)
 
         end subroutine connectivite
+
+
+        subroutine aire(sommets_maille, S, P, aire_maille)
+
+! Tableaux d'entree
+            integer, dimension(:), intent(in)                       :: sommets_maille
+            integer, dimension(:, :), intent(in)                    :: S
+            real(kind = pr), dimension(:, :), intent(in)            :: P
+
+! Sortie de la subroutine :
+!       aire_maille : Tableau tel que aire_maille(i) = aire de la maille i
+            real(kind = pr), dimension(:), allocatable, intent(out) :: aire_maille
+
+! Varibles locales
+            integer                                                 :: k, l, ni, nj, nb_trig
+            real(kind = pr)                                         :: sommeAire
+! Stocke les coordonees des sommets ni et nj            
+            real(kind = pr), dimension(1:2)                         :: ai, aj
+
+            nb_trig = size(S, 1)
+
+            allocate(aire_maille(1:nb_trig))
+
+            do k = 1, nb_trig
+                sommeAire = 0._pr
+                do l = 1, sommets_maille(k)
+
+                    call get_Si1_back(k, l, sommets_maille, S, ni, nj)
+
+                    ai = P(ni, :) ; aj = P(nj, :)
+
+                    sommeAire = sommeAire + (1._pr/2)*((ai(1)*aj(2) - aj(1)*ai(2)))
+
+                end do
+                aire_maille(k) = sommeAire
+            end do
+
+        end subroutine aire
     
 end module maillage
