@@ -11,7 +11,7 @@ module mod_maillage
 !       aire
 !       barycentre
 !       cl_arete
-! Module cree a partir du module mod_maillage.f90 cree par Luc Mieussens :
+! Module inspire du module mod_maillage.f90 cree par Luc Mieussens :
 ! https://www.math.u-bordeaux.fr/~lmieusse/PAGE_WEB/ENSEIGNEMENT/MMK2/VF/TP/mod_maillage.f90
 ! ----------------------------------------------------------------------------------------------
 
