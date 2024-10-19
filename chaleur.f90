@@ -3,18 +3,19 @@ program chaleur
     use mod_precision
     use mod_tri_maillage
     use mod_maillage
+    use mod_sortie
 
     implicit none
 
     integer                                         :: i, nb_mailles, nb_aretes
 
     integer, dimension(:), allocatable              :: sommets_maille, arete_bord
-    real(kind = pr), dimension(:), allocatable      :: aire_maille, l_arete, d_arete
+    real(kind = pr), dimension(:), allocatable      :: aire_maille, l_arete, d_arete, T
     integer, dimension(:, :), allocatable           :: noeud_maille, ar, trig
     real(kind = pr), dimension(:, :), allocatable   :: coord_noeud, milieu_arete
 
 
-    call maillage('TYP2/test.typ2', nb_mailles, nb_aretes, sommets_maille, noeud_maille, coord_noeud &
+    call maillage('TYP2/mesh3_1.typ2', nb_mailles, nb_aretes, sommets_maille, noeud_maille, coord_noeud &
     &             , aire_maille, l_arete, d_arete, milieu_arete, ar, trig, arete_bord)
 
     ! print *, "aire_maille =" 
@@ -47,7 +48,11 @@ program chaleur
         print *, arete_bord(i)
     end do
 
+    allocate(T(1:nb_mailles))
+    T = 300._pr
+    call sortie(0, T, sommets_maille, noeud_maille, coord_noeud)
+
     deallocate(sommets_maille, arete_bord, aire_maille, l_arete, d_arete &
-    &          , noeud_maille, ar, trig, coord_noeud, milieu_arete)
+    &          , noeud_maille, ar, trig, coord_noeud, milieu_arete, T)
     
 end program chaleur
