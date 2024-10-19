@@ -8,14 +8,14 @@ program chaleur
 
     integer                                         :: i, nb_mailles, nb_aretes
 
-    integer, dimension(:), allocatable              :: sommets_maille
+    integer, dimension(:), allocatable              :: sommets_maille, arete_bord
     real(kind = pr), dimension(:), allocatable      :: aire_maille, l_arete, d_arete
     integer, dimension(:, :), allocatable           :: noeud_maille, ar, trig
     real(kind = pr), dimension(:, :), allocatable   :: coord_noeud, milieu_arete
 
 
-    call maillage('TYP2/mesh3_1.typ2', nb_mailles, nb_aretes, sommets_maille, noeud_maille, coord_noeud &
-    &             , aire_maille, l_arete, d_arete, milieu_arete, ar, trig)
+    call maillage('TYP2/test.typ2', nb_mailles, nb_aretes, sommets_maille, noeud_maille, coord_noeud &
+    &             , aire_maille, l_arete, d_arete, milieu_arete, ar, trig, arete_bord)
 
     ! print *, "aire_maille =" 
     ! do i = 1, size(aire_maille, 1)
@@ -36,5 +36,15 @@ program chaleur
     ! do i = 1, size(milieu_arete, 1)
     !     print *, milieu_arete(i, :)
     ! end do
+
+    ! print *, "trig ="
+    ! do i = 1, size(trig, 1)
+    !     print *, trig(i, :)
+    ! end do
+
+    print *, "arete_bord"
+    do i = 1, size(arete_bord)
+        print *, arete_bord(i)
+    end do
     
 end program chaleur

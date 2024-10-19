@@ -19,7 +19,7 @@ module mod_maillage
     contains
 
         subroutine maillage(fichier, nb_mailles, nb_aretes, sommets_maille, S, P, aire_maille &
-        &                   , l_arete, d_arete, milieu_arete, ar, trig)
+        &                   , l_arete, d_arete, milieu_arete, ar, trig, arete_bord)
 
 ! Fichier d'entree
             character(len = *), intent(in)                              :: fichier
@@ -41,9 +41,9 @@ module mod_maillage
 !       trig : Tableau tel que trig(e, 1:2) soient le numero des mailles ayant pour arete commune
 ! l'arete e
 ! Note : trig(e, 2) = 0 lorsque que l'arete e n'a pas de maille adjacente
-! N.B. On peut se servir de trig pour fixer les mailles de bord ! (a implementer prochainement)
+!       arete_bord : Tableau tel que arete_bord(e) = e si e est une arete de bord et 0 sinon
             integer, intent(out)                                        :: nb_mailles, nb_aretes
-            integer, dimension(:), allocatable, intent(out)             :: sommets_maille
+            integer, dimension(:), allocatable, intent(out)             :: sommets_maille, arete_bord
             integer, dimension(:, :), allocatable, intent(out)          :: S, ar, trig
             real(kind = pr), dimension(:), allocatable, intent(out)     :: aire_maille, l_arete, d_arete
             real(kind = pr), dimension(:, :), allocatable, intent(out)  :: P, milieu_arete
@@ -85,6 +85,11 @@ module mod_maillage
                 if (td /= 0) then
                     Gk = P_centre(td, :)
                     d_arete(i) = SQRT(SUM((Gk - Gi)**2))
+                else
+                    A = P(e(i, 1), :)
+                    B = P(e(i, 2), :)
+                    Xe = (A + B)/2._pr
+                    d_arete(i) = SQRT(SUM((Xe - Gi)**2))
                 end if
 
             end do
@@ -99,6 +104,19 @@ module mod_maillage
 
                 l_arete(i) = SQRT(SUM((B - A)**2))
                 milieu_arete(i, :) = (A + B)/2._pr
+
+            end do
+
+! Aretes de bord
+            allocate(arete_bord(1:nb_aretes))
+
+            do i = 1, nb_aretes
+
+                if (trig(i, 2) == 0) then
+                    arete_bord(i) = i
+                else
+                    arete_bord(i) = 0
+                end if
 
             end do
 
