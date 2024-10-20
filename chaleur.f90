@@ -65,6 +65,10 @@ program chaleur
 
     end do
 
+! Application du coefficient cfl sur dt
+
+    dt = cfl*dt
+
 ! Implementation du schema
     t = 0._pr ; tmax = 1._pr
     n = FLOOR(tmax/dt) + 1

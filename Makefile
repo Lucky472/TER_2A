@@ -1,5 +1,5 @@
 F90=gfortran
-FFLAGS=-O0 -Wall -ffpe-trap=invalid,zero,overflow -fcheck=all
+FFLAGS=-O2
 EXE=exec
 
 all : $(EXE)
