@@ -39,7 +39,7 @@ program chaleur
     close(10)
 
 ! Lecture du maillage
-    call maillage("TYP2/"//trim(adjustl(fichier)), nb_mailles, nb_aretes, sommets_maille, noeud_maille, coord_noeud &
+    call maillage("TYP2/"//fichier, nb_mailles, nb_aretes, sommets_maille, noeud_maille, coord_noeud &
     &             , aire_maille, l_arete, d_arete, milieu_arete, ar, trig, cl_arete_bord)
 
 ! Allocation des tableaux de temperature
