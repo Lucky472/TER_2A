@@ -53,7 +53,7 @@ module mod_sortie
             write(1,*) 'CELL_TYPES ', nb_mailles
             do i = 1, nb_mailles
 
-! Evalue si la cellule la forme de la cellule
+! Evalue la forme de la cellule
                 if (sommets_maille(i) >= 5) then
 ! Dans ce cas, on a un polygone :
 !       VTK_POLYGON = 7
