@@ -6,6 +6,7 @@ module mod_tri_maillage
 
 ! ----------------------------------------------------------------------------------------------
 ! Module contenant les subroutines de tri pour mod_maillage :
+!       get_Si1_back
 !       fill_flag
 !       fill_e
 !       fill_ar_trig
