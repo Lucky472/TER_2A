@@ -6,6 +6,8 @@ program chaleur
 
     implicit none
 
+    character(len = 50)                             :: fichier
+
     integer                                         :: j, i, k, n, nplot, e, nb_mailles, nb_aretes
     integer, dimension(:), allocatable              :: sommets_maille, cl_arete_bord
     integer, dimension(:, :), allocatable           :: noeud_maille, ar, trig
@@ -22,6 +24,8 @@ program chaleur
 !       Phih : Condition aux limites sur le bord haut
 !       Phib : Condition aux limites sur le bord bas
 !       D : Coefficient de diffusion
+!       fichier : Fichier contenant le maillage
+! Note : Le fichier doit etre contenu dans le dossier TYP2
     open(10, file = "parameters.dat")
 
         read(10, *) Tinit
@@ -30,11 +34,12 @@ program chaleur
         read(10, *) Phih
         read(10, *) Phib
         read(10, *) D
+        read(10, *) fichier
 
     close(10)
 
 ! Lecture du maillage
-    call maillage("TYP2/mesh3_1.typ2", nb_mailles, nb_aretes, sommets_maille, noeud_maille, coord_noeud &
+    call maillage("TYP2/"//trim(adjustl(fichier)), nb_mailles, nb_aretes, sommets_maille, noeud_maille, coord_noeud &
     &             , aire_maille, l_arete, d_arete, milieu_arete, ar, trig, cl_arete_bord)
 
 ! Allocation des tableaux de temperature
