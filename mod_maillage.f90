@@ -118,6 +118,8 @@ module mod_maillage
 ! Condtions aux limites sur les aretes de bord
             call cl_arete(P, e, trig, cl_arete_bord)
 
+            deallocate(e, P_centre)
+
         end subroutine maillage
 
 
@@ -191,6 +193,8 @@ module mod_maillage
             call fill_e(sommets_maille, S, nb_cotes, flag, e)
 
             call fill_ar_trig(sommets_maille, S, nb_cotes, flag, ar, trig)
+
+            deallocate(flag)
 
         end subroutine connectivite
 
