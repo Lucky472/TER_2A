@@ -131,7 +131,7 @@ module mod_tri_maillage
 
             nb_trig = size(S, 1)
 
-            allocate(ar(1:nb_trig, 5), trig(1:nb_cotes, 2))
+            allocate(ar(1:nb_trig, 1:nb_max_sommets)) ; allocate(trig(1:nb_cotes, 2))
 
 ! Remplissage de ar et trig
             ar = 0

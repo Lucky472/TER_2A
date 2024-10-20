@@ -29,16 +29,17 @@ module mod_maillage
 !       nb_mailles : nombre de mailles du maillage
 !       nb_aretes : nombre d'aretes du maillage
 !       sommets_maille : Tableau tel que sommets_maille(i) = nombre de sommets de la maille i
-!       S : Tableau tel que S(i, 1:5) soient les, au plus, 5 sommets de la maille i
-! Note : S(i, 5) = 0 lorsque la maille i n'a que 4 sommets
+!       S : Tableau tel que S(i, 1:nb_max_sommets) soient les, au plus, nb_max_sommets sommets 
+! de la maille i
+! Note : S(i, nb_max_sommets) = 0 lorsque la maille i n'a que (nb_max_somets - 1) sommets
 !       P : Tableau tel que P(i, 1:2) soient les coordonnes du sommet i
 !       aire_maille : Tableau tel que aire_maille(i) = aire de la maille i
 !       l_arete : Tableau tel que l_arete(e) = longueur de l'arete e
 !       d_arete : Tableau tel que d_arete(e) = distance d_e de Fie
 !       milieu_arete : Tableau tel que milieu_arete(e, 1:2) soient les coordonnes du centre
 ! de l'arete e
-!       ar : Tableau tel que ar(i, 1:5) soient les numeros des aretes formant la maille i
-! Note : ar(i, 5) = 0 lorsque la maille i est formee par 4 aretes
+!       ar : Tableau tel que ar(i, 1:nb_max_sommets) soient les numeros des aretes formant la maille i
+! Note : ar(i, nb_max_sommets) = 0 lorsque la maille i est formee par (nb_max_sommets - 1) aretes
 !       trig : Tableau tel que trig(e, 1:2) soient le numero des mailles ayant pour arete commune
 ! l'arete e
 ! Note : trig(e, 2) = 0 lorsque que l'arete e n'a pas de maille adjacente
@@ -127,8 +128,8 @@ module mod_maillage
         
 ! Sorties de la subroutine :
 !       sommets_maille : Tableau tel que sommets_maille(i) = nombre de sommets de la maille i
-!       S : Tableau tel que S(i, 1:5) sont les au plus 5 sommets de la maille i
-! Note : S(i, 5) = 0 lorsque la maille i n'a que 4 sommets
+!       S : Tableau tel que S(i, 1:nb_max_sommets) sont les au plus nb_max_sommets sommets de la maille i
+! Note : S(i, nb_max_sommets) = 0 lorsque la maille i n'a que (nb_max_sommets - 1) sommets
 !       P : Tableau tel que P(i, 1:2) sont les coordonees du sommet i
             integer, dimension(:), allocatable, intent(out)             :: sommets_maille
             integer, dimension(:, :), allocatable, intent(out)          :: S
@@ -155,7 +156,7 @@ module mod_maillage
             read(10, *)
             read(10, *) nb_mailles
 
-            allocate(sommets_maille(1:nb_mailles), S(1:nb_mailles, 5))
+            allocate(sommets_maille(1:nb_mailles)) ; allocate(S(1:nb_mailles, nb_max_sommets))
 
             do i = 1, nb_mailles
 ! Lit le nombre de sommets de la maille puis leur numero
@@ -177,7 +178,7 @@ module mod_maillage
 !       e : Tableau tel que e(i, 1) et e(i, 2) soient les sommets de l'arete e de
 ! la maille i
 !       ar : Tableau contenant le numero des aretes de chaque maille
-! Note : ar(i, 5) = 0 indique que la maille a 4 aretes
+! Note : ar(i, nb_max_sommets) = 0 indique que la maille a (nb_max_sommets - 1) aretes
 !       trig : numero des mailles ayant en commun l'arete i
             integer, dimension(:, :), allocatable, intent(out)          :: e, ar, trig
 

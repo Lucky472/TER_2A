@@ -54,7 +54,7 @@ module mod_sortie
             do i = 1, nb_mailles
 
 ! Evalue si la cellule est un polygone ou un quadrilataire
-                if (sommets_maille(i) == 5) then
+                if (sommets_maille(i) >= 5) then
 ! Dans ce cas, on a un polygone :
 !       VTK_POLYGON = 7
                     write(1, *) 7
@@ -62,6 +62,10 @@ module mod_sortie
 ! Dans ce cas, on a un quadrilataire :
 !       VTK_QUAD = 9
                     write(1, *) 9
+                else if (sommets_maille(i) == 3) then
+! Dans ce cas, on a un triangle :
+!       VTK_TRIANGLE = 5
+                    write(1, *) 5
                 end if
 
             end do
