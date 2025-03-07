@@ -2,6 +2,7 @@ program chaleur
 
     use mod_precision
     use mod_maillage
+    use mod_resolution
     use mod_sortie
 
     implicit none
@@ -9,13 +10,13 @@ program chaleur
     character(len = 50)                             :: fichier
 
     integer                                         :: j, i, k, n, nplot, e, nb_mailles, nb_aretes
-    integer, dimension(:), allocatable              :: sommets_maille, cl_arete_bord
+    integer, dimension(:), allocatable              :: sommets_maille, cl_arete_bord, A_row, A_col, row_CSR, col_CSR
     integer, dimension(:, :), allocatable           :: noeud_maille, ar, trig
     
     real(kind = pr)                                 :: Tinit, Tg, Td, Phih, Phib, D                 &
     &                                                  , t, tmax, dt, sommeDt, Fie
-    real(kind = pr), dimension(:), allocatable      :: aire_maille, l_arete, d_arete, Tn, Tnp1
-    real(kind = pr), dimension(:, :), allocatable   :: coord_noeud, milieu_arete
+    real(kind = pr), dimension(:), allocatable      :: aire_maille, l_arete, d_arete, Tn, Tnp1, A_val, val_CSR
+    real(kind = pr), dimension(:, :), allocatable   :: coord_noeud, milieu_arete, A
 
 ! Lecture dans le fichier parameters.dat :
 !       Tinit : Condition initiale Tinit
@@ -105,6 +106,29 @@ program chaleur
             call sortie(j, Tn, sommets_maille, noeud_maille, coord_noeud)
         end if
 
+    end do
+
+    call make_A_matrix(0.5_pr, nb_mailles, aire_maille, l_arete, d_arete, &
+    &                  ar, trig, cl_arete_bord, A)
+    
+    print *, "A = "
+    do i = 1, nb_mailles
+        print *, A(i, :)
+    end do
+
+    call make_A_COO(0.5_pr, nb_mailles, aire_maille, l_arete, d_arete, &
+    &                  ar, trig, cl_arete_bord, A_row, A_col, A_val)
+
+    call make_A_CSR(nb_mailles, A_row, A_col, A_val, row_CSR, col_CSR, val_CSR)
+
+    do i = 1, size(row_CSR)
+        print *, row_CSR(i)
+    end do
+    do i = 1, size(col_CSR)
+        print *, col_CSR(i)
+    end do
+    do i = 1, size(val_CSR)
+        print *, val_CSR(i)
     end do
 
     deallocate(sommets_maille, cl_arete_bord, aire_maille, l_arete, d_arete &
