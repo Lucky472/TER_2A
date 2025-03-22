@@ -4,13 +4,19 @@ module mod_resolution
     use mod_maillage
 
 ! ----------------------------------------------------------------------------------------------
-
+! Module contenant les subroutines pour mod_resolution :
+!       make_A_matrix (temporaire, a des fins de verification)
+!       make_A_COO
+!       make_A_CSR
+!       make_b
+!       conjugate_gradient (reste a faire)
 ! ----------------------------------------------------------------------------------------------
 
     implicit none
 
     contains
 
+! Subroutine a des fins de verification : creee la matrice A sous forme pleine
 !         subroutine make_A_matrix(dt, nb_mailles, aire_maille, l_arete, d_arete, ar, trig,   &
 !         &                        cl_arete_bord, A)
 
@@ -65,14 +71,21 @@ module mod_resolution
         subroutine make_A_COO(dt, nb_mailles, aire_maille, l_arete, d_arete, ar, trig,   &
         &                        cl_arete_bord, A_row, A_col, A_val)
 
-!
+! Entrees de la subroutine
             integer, intent(in)                                         :: nb_mailles
             integer, dimension(:), intent(in)                           :: cl_arete_bord
             integer, dimension(:, :), intent(in)                        :: ar, trig
             real(kind = pr), intent(in)                                 :: dt
             real(kind = pr), dimension(:), intent(in)                   :: aire_maille, l_arete, d_arete
 
-!
+! Sorties de la subroutine :
+!       A_row(1:nb_elements_non_nuls) : Tableau row_COO, ie l'indice i d'un element non nul de la matrice A
+! (tries par colonne)
+!       A_col(1:nb_elements_non_nuls) : Tableau col_COO, ie l'indice j d'un element non nul de la matrice A
+! (tries par colonne)
+!       A_val(1:nb_elements_non_nuls) : Tableau val_COO, ie la valeur d'un element non nul A(i,j) sachant que
+! les termes extra-diagonaux sont d'abord ranges. Par exemple : (1,31) suivi de son symetrique (31,1) et la
+! colonne est fermee par le terme diagonal (1,1)
             integer, dimension(:), allocatable, intent(out)             :: A_row, A_col
             real(kind = pr), dimension(:), allocatable, intent(out)     :: A_val
 
@@ -86,6 +99,10 @@ module mod_resolution
             do i = 1, nb_mailles
                 Aii = 1._pr
                 e = ar(i, :)
+! N.B : On ne peut pas contruire la matrice A comme on le fait pour les flux, ie faire une boucle sur les
+! aretes et ajouter (resp. soustraire) leur contribution aux deux mailles
+! Ainsi, pour chaque maille, le tableau e recupere et stocke les aretes de celle-ci puis on ajoute la
+! la contribution de chaque arete aux differents termes de A
                 do j = 1, nb_max_sommets
                     Aik = 0._pr
                     if (e(j) /= 0) then
@@ -122,14 +139,22 @@ module mod_resolution
         subroutine make_A_CSR(dt, nb_mailles, aire_maille, l_arete, d_arete, ar, trig,  &
         &                   cl_arete_bord, row_CSR, col_CSR, val_CSR)
 
-!
+! Entrees de la subroutine
             integer, intent(in)                                         :: nb_mailles
             integer, dimension(:), intent(in)                           :: cl_arete_bord
             integer, dimension(:, :), intent(in)                        :: ar, trig
             real(kind = pr), intent(in)                                 :: dt
             real(kind = pr), dimension(:), intent(in)                   :: aire_maille, l_arete, d_arete
         
-! 
+! Sorties de la subroutine :
+!       row_CSR(1:nb_mailles+1) : Tableau row_CSR, ie row_CSR(i) = nombre d'elements non nuls de A sur
+! les i precedentes colonnes
+! N.B : row_CSR(1) = 0
+!       col_CSR(1:nb_elements_non_nuls) : Tableau col_CSR, ie 1 <= col_CSR(j) = k <= nb_mailles l'indice
+! de la ligne sur lequel se situe l'element non nul
+! N.B : Pour chaque colonne i de A, on sait qu'il y a (row_CSR(i+1) - row_CSR(i)) elements non nuls
+!       val_CSR(1:nb_elements_non_nuls) : Tableau val_CSR, ie le tableau des valeurs des elements non nuls
+! de A
             integer, dimension(:), allocatable, intent(out)             :: row_CSR, col_CSR
             real(kind = pr), dimension(:), allocatable, intent(out)     :: val_CSR
         
@@ -141,30 +166,24 @@ module mod_resolution
             call make_A_COO(dt, nb_mailles, aire_maille, l_arete, d_arete, ar, trig,    &
             &               cl_arete_bord, row_COO, col_COO, val_COO)
         
-! Taille initiale pour le tableau CSR
             n = size(row_COO)
-        
-! Allocation et copie des valeurs
-            allocate(row_sorted(n), col_sorted(n), val_sorted(n))
+    
+            allocate(row_sorted(1:n), col_sorted(1:n), val_sorted(1:n))
             row_sorted = row_COO ; col_sorted = col_COO ; val_sorted = val_COO
 
-! Deallocation des matrices COO
             deallocate(row_COO, col_COO, val_COO)
         
 ! Tri des indices (row, col)
             call sort_A_elements(n, row_sorted, col_sorted, val_sorted)
         
-! Allocation des tableaux CSR
-            allocate(row_CSR(nb_mailles + 1))
-            allocate(col_CSR(n), val_CSR(n))
-        
-! Initialisation
+            allocate(row_CSR(1:nb_mailles + 1))
+            allocate(col_CSR(1:n), val_CSR(1:n))
+
             row_CSR = 0 ; unique_count = 0
         
 ! Construction de col_CSR et val_CSR en évitant les doublons
             do i = 1, n
                 if (i == 1 .or. row_sorted(i) /= row_sorted(i-1) .or. col_sorted(i) /= col_sorted(i-1)) then
-! Nouvel élément unique
                     unique_count = unique_count + 1
                     col_CSR(unique_count) = col_sorted(i)
                     val_CSR(unique_count) = val_sorted(i)
@@ -191,14 +210,16 @@ module mod_resolution
         subroutine make_b(dt, nb_mailles, aire_maille, l_arete, d_arete, ar, trig,  &
         &                 cl_arete_bord, Tn, Phih, Phib, Tg, Td, b)
 
-!
+! Entrees de la subroutine
         integer, intent(in)                                         :: nb_mailles
         integer, dimension(:), intent(in)                           :: cl_arete_bord
         integer, dimension(:, :), intent(in)                        :: ar, trig
         real(kind = pr), intent(in)                                 :: dt, Phih, Phib, Tg, Td
         real(kind = pr), dimension(:), intent(in)                   :: aire_maille, l_arete, d_arete, Tn
 
-!
+! Sortie de la subroutine :
+!       b(1:nb_mailles) : Second membre de la formulation matricielle du schema temporel
+! d'Euler Implicite
         real(kind = pr), dimension(:), allocatable, intent(out)     :: b
 
 ! Variables locales
@@ -211,6 +232,7 @@ module mod_resolution
         do i = 1, nb_mailles
             bi = 0._pr
             e = ar(i, :)
+! cf. subroutine make_A_COO pour la description du tableau e
             do j = 1, nb_max_sommets
                 if (e(j) /= 0) then
                     k = trig(e(j), 2)
@@ -231,10 +253,16 @@ module mod_resolution
 
         end subroutine make_b
   
-        
+! ----------------------------------------------------------------------------------------------
+! Subroutines annexes implementant quelques methodes elementaires :
+!       push_back_int
+!       push_back_real
+!       sort_A_elements
+! ----------------------------------------------------------------------------------------------
+
         subroutine push_back_int(vector, new_element)
 
-!
+! Entrees et sortie de la subroutine
             integer, intent(in)                                         :: new_element
             integer, dimension(:), allocatable, intent(inout)           :: vector
 
@@ -260,7 +288,7 @@ module mod_resolution
 
         subroutine push_back_real(vector, new_element)
 
-!
+! Entrees et sortie de la subroutine
             real(kind = pr), intent(in)                                 :: new_element
             real(kind = pr), dimension(:), allocatable, intent(inout)   :: vector
 
