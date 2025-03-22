@@ -15,7 +15,7 @@ program chaleur
     
     real(kind = pr)                                 :: Tinit, Tg, Td, Phih, Phib, D                 &
     &                                                  , t, tmax, dt, sommeDt, Fie
-    real(kind = pr), dimension(:), allocatable      :: aire_maille, l_arete, d_arete, Tn, Tnp1, A_val, val_CSR
+    real(kind = pr), dimension(:), allocatable      :: aire_maille, l_arete, d_arete, Tn, Tnp1, A_val, val_CSR, b
     real(kind = pr), dimension(:, :), allocatable   :: coord_noeud, milieu_arete, A
 
 ! Lecture dans le fichier parameters.dat :
@@ -108,18 +108,19 @@ program chaleur
 
     end do
 
-    call make_A_matrix(0.5_pr, nb_mailles, aire_maille, l_arete, d_arete, &
-    &                  ar, trig, cl_arete_bord, A)
+    ! call make_A_matrix(0.5_pr, nb_mailles, aire_maille, l_arete, d_arete, &
+    ! &                  ar, trig, cl_arete_bord, A)
     
     print *, "A = "
     do i = 1, nb_mailles
-        print *, A(i, :)
+        print *, A(i, :)    
     end do
 
-    call make_A_COO(0.5_pr, nb_mailles, aire_maille, l_arete, d_arete, &
-    &                  ar, trig, cl_arete_bord, A_row, A_col, A_val)
+    ! call make_A_COO(0.5_pr, nb_mailles, aire_maille, l_arete, d_arete, &
+    ! &                  ar, trig, cl_arete_bord, A_row, A_col, A_val)
 
-    call make_A_CSR(nb_mailles, A_row, A_col, A_val, row_CSR, col_CSR, val_CSR)
+    call make_A_CSR(0.5_pr, nb_mailles, aire_maille, l_arete, d_arete,      &
+    &                  ar, trig, cl_arete_bord, row_CSR, col_CSR, val_CSR)
 
     do i = 1, size(row_CSR)
         print *, row_CSR(i)
@@ -130,6 +131,14 @@ program chaleur
     do i = 1, size(val_CSR)
         print *, val_CSR(i)
     end do
+
+    call make_b(0.5_pr, nb_mailles, aire_maille, l_arete, d_arete, ar,    &
+    &          trig, cl_arete_bord, Tn, Phih, Phib, Tg, Td, b)
+    print *, "b = "
+    print *, b
+
+    print *, "Tn = "
+    print *, Tn
 
     deallocate(sommets_maille, cl_arete_bord, aire_maille, l_arete, d_arete &
     &          , noeud_maille, ar, trig, coord_noeud, milieu_arete, Tn, Tnp1)

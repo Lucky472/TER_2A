@@ -11,55 +11,55 @@ module mod_resolution
 
     contains
 
-        subroutine make_A_matrix(dt, nb_mailles, aire_maille, l_arete, d_arete, ar, trig,   &
-        &                        cl_arete_bord, A)
+!         subroutine make_A_matrix(dt, nb_mailles, aire_maille, l_arete, d_arete, ar, trig,   &
+!         &                        cl_arete_bord, A)
 
-!
-            integer, intent(in)                                         :: nb_mailles
-            integer, dimension(:), intent(in)                           :: cl_arete_bord
-            integer, dimension(:, :), intent(in)                        :: ar, trig
-            real(kind = pr), intent(in)                                 :: dt
-            real(kind = pr), dimension(:), intent(in)                   :: aire_maille, l_arete, d_arete
+! !
+!             integer, intent(in)                                         :: nb_mailles
+!             integer, dimension(:), intent(in)                           :: cl_arete_bord
+!             integer, dimension(:, :), intent(in)                        :: ar, trig
+!             real(kind = pr), intent(in)                                 :: dt
+!             real(kind = pr), dimension(:), intent(in)                   :: aire_maille, l_arete, d_arete
 
-!
-            real(kind = pr), dimension(:, :), allocatable, intent(out)  :: A
+! !
+!             real(kind = pr), dimension(:, :), allocatable, intent(out)  :: A
 
-! Variables locales
-            integer                                                     :: i, j, k
-            integer, dimension(nb_max_sommets)                          :: e
+! ! Variables locales
+!             integer                                                     :: i, j, k
+!             integer, dimension(nb_max_sommets)                          :: e
 
-            allocate(A(1:nb_mailles, 1:nb_mailles))
+!             allocate(A(1:nb_mailles, 1:nb_mailles))
 
-            A = 0._pr
+!             A = 0._pr
 
-            do i = 1 , nb_mailles
-                A(i, i) = 1._pr
-            end do
+!             do i = 1 , nb_mailles
+!                 A(i, i) = 1._pr
+!             end do
 
-            do i = 1, nb_mailles
-                e = ar(i, :)
-                do j = 1, nb_max_sommets
-                    if (e(j) /= 0) then
-                        k = trig(e(j), 2)
-                        if (k == 0 .AND. (cl_arete_bord(e(j)) == 10 .OR. cl_arete_bord(e(j)) == 11)) then
-! On est sur une arete de bord avec une condition de Dirichlet
-                            A(i, i) = A(i, i) + (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))
-                        else if (k == 0 .AND. cl_arete_bord(e(j)) == 20) then
-! On est sur une arete de bord avec une condition de Neumann
-                            A(i, i) = A(i, i)
-                        else if (k /= 0) then
-! On est sur une arete interieure
-                            A(i, i) = A(i, i) + (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))
-                            if (k /= i) then
-                                A(i, k) = A(i, k) - (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))
-                                A(k, i) = A(i, k)
-                            end if
-                        end if
-                    end if   
-                end do
-            end do
+!             do i = 1, nb_mailles
+!                 e = ar(i, :)
+!                 do j = 1, nb_max_sommets
+!                     if (e(j) /= 0) then
+!                         k = trig(e(j), 2)
+!                         if (k == 0 .AND. (cl_arete_bord(e(j)) == 10 .OR. cl_arete_bord(e(j)) == 11)) then
+! ! On est sur une arete de bord avec une condition de Dirichlet
+!                             A(i, i) = A(i, i) + (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))
+!                         else if (k == 0 .AND. cl_arete_bord(e(j)) == 20) then
+! ! On est sur une arete de bord avec une condition de Neumann
+!                             A(i, i) = A(i, i)
+!                         else if (k /= 0) then
+! ! On est sur une arete interieure
+!                             A(i, i) = A(i, i) + (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))
+!                             if (k /= i) then
+!                                 A(i, k) = A(i, k) - (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))
+!                                 A(k, i) = A(i, k)
+!                             end if
+!                         end if
+!                     end if   
+!                 end do
+!             end do
 
-        end subroutine make_A_matrix
+!         end subroutine make_A_matrix
 
         
         subroutine make_A_COO(dt, nb_mailles, aire_maille, l_arete, d_arete, ar, trig,   &
@@ -119,19 +119,27 @@ module mod_resolution
         end subroutine make_A_COO
 
 
-        subroutine make_A_CSR(nb_mailles, row_COO, col_COO, val_COO, row_CSR, col_CSR, val_CSR)
+        subroutine make_A_CSR(dt, nb_mailles, aire_maille, l_arete, d_arete, ar, trig,  &
+        &                   cl_arete_bord, row_CSR, col_CSR, val_CSR)
 
+!
             integer, intent(in)                                         :: nb_mailles
-            integer, dimension(:), intent(in)                           :: row_COO, col_COO
-            real(kind = pr), dimension(:), intent(in)                   :: val_COO
+            integer, dimension(:), intent(in)                           :: cl_arete_bord
+            integer, dimension(:, :), intent(in)                        :: ar, trig
+            real(kind = pr), intent(in)                                 :: dt
+            real(kind = pr), dimension(:), intent(in)                   :: aire_maille, l_arete, d_arete
         
+! 
             integer, dimension(:), allocatable, intent(out)             :: row_CSR, col_CSR
             real(kind = pr), dimension(:), allocatable, intent(out)     :: val_CSR
         
-            ! Variables locales
+! Variables locales
             integer                                                     :: i, j, n, unique_count
-            integer, dimension(:), allocatable                          :: row_sorted, col_sorted
-            real(kind = pr), dimension(:), allocatable                  :: val_sorted
+            integer, dimension(:), allocatable                          :: row_COO, col_COO, row_sorted, col_sorted
+            real(kind = pr), dimension(:), allocatable                  :: val_COO, val_sorted
+
+            call make_A_COO(dt, nb_mailles, aire_maille, l_arete, d_arete, ar, trig,    &
+            &               cl_arete_bord, row_COO, col_COO, val_COO)
         
 ! Taille initiale pour le tableau CSR
             n = size(row_COO)
@@ -139,6 +147,9 @@ module mod_resolution
 ! Allocation et copie des valeurs
             allocate(row_sorted(n), col_sorted(n), val_sorted(n))
             row_sorted = row_COO ; col_sorted = col_COO ; val_sorted = val_COO
+
+! Deallocation des matrices COO
+            deallocate(row_COO, col_COO, val_COO)
         
 ! Tri des indices (row, col)
             call sort_A_elements(n, row_sorted, col_sorted, val_sorted)
@@ -175,6 +186,50 @@ module mod_resolution
             deallocate(row_sorted, col_sorted, val_sorted)
         
         end subroutine make_A_CSR
+
+
+        subroutine make_b(dt, nb_mailles, aire_maille, l_arete, d_arete, ar, trig,  &
+        &                 cl_arete_bord, Tn, Phih, Phib, Tg, Td, b)
+
+!
+        integer, intent(in)                                         :: nb_mailles
+        integer, dimension(:), intent(in)                           :: cl_arete_bord
+        integer, dimension(:, :), intent(in)                        :: ar, trig
+        real(kind = pr), intent(in)                                 :: dt, Phih, Phib, Tg, Td
+        real(kind = pr), dimension(:), intent(in)                   :: aire_maille, l_arete, d_arete, Tn
+
+!
+        real(kind = pr), dimension(:), allocatable, intent(out)     :: b
+
+! Variables locales
+        integer                                                     :: i, j, k
+        integer, dimension(nb_max_sommets)                          :: e
+        real(kind = pr)                                             :: bi
+
+        allocate(b(1:nb_mailles))
+
+        do i = 1, nb_mailles
+            bi = 0._pr
+            e = ar(i, :)
+            do j = 1, nb_max_sommets
+                if (e(j) /= 0) then
+                    k = trig(e(j), 2)
+                    if (k == 0 .AND. (cl_arete_bord(e(j)) == 10)) then
+! On est sur une arete de bord avec une condition de Dirichlet 1 (ici Tg)
+                        bi = bi + (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))*Tg
+                    else if (k == 0 .AND. (cl_arete_bord(e(j)) == 11)) then
+! On est sur une arete de bord avec une condition de Dirichlet 2 (ici Td)
+                        bi = bi + (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))*Td
+                    else if (k == 0 .AND. (cl_arete_bord(e(j)) == 20)) then
+! On est sur une arete de bord avec une condition de Neumann (ici Phih = Phib)
+                        bi = bi + (dt/aire_maille(i))*l_arete(e(j))*Phih
+                    end if
+                end if
+            end do
+            b(i) = bi + Tn(i)
+        end do
+
+        end subroutine make_b
   
         
         subroutine push_back_int(vector, new_element)
