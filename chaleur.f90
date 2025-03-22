@@ -15,7 +15,7 @@ program chaleur
     
     real(kind = pr)                                 :: Tinit, Tg, Td, Phih, Phib, D                 &
     &                                                  , t, tmax, dt, sommeDt, Fie
-    real(kind = pr), dimension(:), allocatable      :: aire_maille, l_arete, d_arete, Tn, Tnp1, A_val, val_CSR, b
+    real(kind = pr), dimension(:), allocatable      :: aire_maille, l_arete, d_arete, Tn, Tnp1, A_val, val_CSR, b, x, y
     real(kind = pr), dimension(:, :), allocatable   :: coord_noeud, milieu_arete, A
 
 ! Lecture dans le fichier parameters.dat :
@@ -48,7 +48,11 @@ program chaleur
     allocate(Tn(1:nb_mailles)) ; allocate(Tnp1(1:nb_mailles))
 ! Initialisation de Tnp1 et Tn
     Tn = Tinit
-    Tnp1 = Tn  
+    Tnp1 = Tn
+
+! ----------------------------------------------------------------------------------------------
+! Euler explicite
+! ----------------------------------------------------------------------------------------------
 
 ! Calcul du pas de temps
     dt = 1._pr
@@ -67,7 +71,6 @@ program chaleur
     end do
 
 ! Application du coefficient cfl sur dt
-
     dt = cfl*dt
 
 ! Implementation du schema
@@ -101,46 +104,45 @@ program chaleur
 
         Tn = Tnp1
 
-        nplot = FLOOR(REAL(n)/10)
-        if (j == 1 .or. MODULO(j, nplot) == 0) then
-            call sortie(j, Tn, sommets_maille, noeud_maille, coord_noeud)
-        end if
+        ! nplot = FLOOR(REAL(n)/10)
+        ! if (j == 1 .or. MODULO(j, nplot) == 0) then
+        !     call sortie(j, Tn, sommets_maille, noeud_maille, coord_noeud)
+        ! end if
 
     end do
 
-    ! call make_A_matrix(0.5_pr, nb_mailles, aire_maille, l_arete, d_arete, &
-    ! &                  ar, trig, cl_arete_bord, A)
-    
-    ! print *, "A = "
-    ! do i = 1, nb_mailles
-    !     print *, A(i, :)    
+! ----------------------------------------------------------------------------------------------
+! Euler Implicite
+! ----------------------------------------------------------------------------------------------
+    t = 0._pr ; tmax = 0.2_pr ; dt = 0.01_pr
+    n = FLOOR(tmax/dt) + 1
+
+    Tn = Tinit
+    Tnp1 = Tn
+
+    call make_A_CSR(dt, nb_mailles, aire_maille, l_arete, d_arete, ar, trig,    &
+    &               cl_arete_bord, row_CSR, col_CSR, val_CSR)
+
+    ! do i = 1, 4
+    !     print *, A(i, :)
     ! end do
 
-    ! call make_A_COO(0.5_pr, nb_mailles, aire_maille, l_arete, d_arete, &
-    ! &                  ar, trig, cl_arete_bord, A_row, A_col, A_val)
+    ! print *, "row_CSR", row_CSR
+    ! print *, "col_CSR", col_CSR
+    ! print *, "val_CSR", val_CSR
 
-    call make_A_CSR(0.5_pr, nb_mailles, aire_maille, l_arete, d_arete,      &
-    &                  ar, trig, cl_arete_bord, row_CSR, col_CSR, val_CSR)
+    do j = 1, n
+        
+        call make_b(dt, nb_mailles, aire_maille, l_arete, d_arete, ar, trig,    &
+        &           cl_arete_bord, Tn, Phih, Phib, Tg, Td, b)
 
-    ! do i = 1, size(row_CSR)
-    !     print *, row_CSR(i)
-    ! end do
-    ! do i = 1, size(col_CSR)
-    !     print *, col_CSR(i)
-    ! end do
-    ! do i = 1, size(val_CSR)
-    !     print *, val_CSR(i)
-    ! end do
+        call conjugate_gradient(row_CSR, col_CSR, val_CSR, Tn, b, Tnp1)
 
-    print *, size(row_CSR), size(col_CSR), size(val_CSR)
+        Tn = Tnp1
+        
+        call sortie(j, Tn, sommets_maille, noeud_maille, coord_noeud)
 
-    call make_b(0.5_pr, nb_mailles, aire_maille, l_arete, d_arete, ar,    &
-    &          trig, cl_arete_bord, Tn, Phih, Phib, Tg, Td, b)
-    print *, "size b = "
-    print *, size(b)
-
-    ! print *, "Tn = "
-    ! print *, Tn
+    end do
 
     deallocate(sommets_maille, cl_arete_bord, aire_maille, l_arete, d_arete &
     &          , noeud_maille, ar, trig, coord_noeud, milieu_arete, Tn, Tnp1)

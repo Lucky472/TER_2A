@@ -17,55 +17,56 @@ module mod_resolution
     contains
 
 ! Subroutine a des fins de verification : creee la matrice A sous forme pleine
-!         subroutine make_A_matrix(dt, nb_mailles, aire_maille, l_arete, d_arete, ar, trig,   &
-!         &                        cl_arete_bord, A)
+        subroutine make_A_matrix(dt, nb_mailles, aire_maille, l_arete, d_arete, ar, trig,   &
+        &                        cl_arete_bord, A)
 
-! !
-!             integer, intent(in)                                         :: nb_mailles
-!             integer, dimension(:), intent(in)                           :: cl_arete_bord
-!             integer, dimension(:, :), intent(in)                        :: ar, trig
-!             real(kind = pr), intent(in)                                 :: dt
-!             real(kind = pr), dimension(:), intent(in)                   :: aire_maille, l_arete, d_arete
+!
+            integer, intent(in)                                         :: nb_mailles
+            integer, dimension(:), intent(in)                           :: cl_arete_bord
+            integer, dimension(:, :), intent(in)                        :: ar, trig
+            real(kind = pr), intent(in)                                 :: dt
+            real(kind = pr), dimension(:), intent(in)                   :: aire_maille, l_arete, d_arete
 
-! !
-!             real(kind = pr), dimension(:, :), allocatable, intent(out)  :: A
+!
+            real(kind = pr), dimension(:, :), allocatable, intent(out)  :: A
 
-! ! Variables locales
-!             integer                                                     :: i, j, k
-!             integer, dimension(nb_max_sommets)                          :: e
-
-!             allocate(A(1:nb_mailles, 1:nb_mailles))
-
-!             A = 0._pr
-
-!             do i = 1 , nb_mailles
-!                 A(i, i) = 1._pr
-!             end do
-
-!             do i = 1, nb_mailles
-!                 e = ar(i, :)
-!                 do j = 1, nb_max_sommets
-!                     if (e(j) /= 0) then
-!                         k = trig(e(j), 2)
-!                         if (k == 0 .AND. (cl_arete_bord(e(j)) == 10 .OR. cl_arete_bord(e(j)) == 11)) then
-! ! On est sur une arete de bord avec une condition de Dirichlet
-!                             A(i, i) = A(i, i) + (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))
-!                         else if (k == 0 .AND. cl_arete_bord(e(j)) == 20) then
-! ! On est sur une arete de bord avec une condition de Neumann
-!                             A(i, i) = A(i, i)
-!                         else if (k /= 0) then
-! ! On est sur une arete interieure
-!                             A(i, i) = A(i, i) + (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))
-!                             if (k /= i) then
-!                                 A(i, k) = A(i, k) - (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))
-!                                 A(k, i) = A(i, k)
-!                             end if
-!                         end if
-!                     end if   
-!                 end do
-!             end do
-
-!         end subroutine make_A_matrix
+! Variables locales
+            integer :: i, j, k
+            integer, dimension(nb_max_sommets) :: e
+            
+            allocate(A(1:nb_mailles, 1:nb_mailles))
+            
+            A = 0._pr
+            
+            do i = 1 , nb_mailles
+                A(i, i) = 1._pr
+            end do
+            
+            do i = 1, nb_mailles
+                e = ar(i, :)
+                do j = 1, nb_max_sommets
+                    if (e(j) /= 0) then
+                        k = trig(e(j), 2)
+                        if (k == 0 .AND. (cl_arete_bord(e(j)) == 10 .OR. cl_arete_bord(e(j)) == 11)) then
+! On est sur une arete de bord avec une condition de Dirichlet
+                            A(i, i) = A(i, i) + (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))
+                        else if (k == 0 .AND. cl_arete_bord(e(j)) == 20) then
+! On est sur une arete de bord avec une condition de Neumann
+                            A(i, i) = A(i, i)
+                        else if (k /= 0) then
+! On est sur une arete interieure
+                            A(i, i) = A(i, i) + (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))
+                            if (k /= i) then
+                                A(i, k) = A(i, k) - (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))
+                                A(k, i) = A(k, i) - (dt/aire_maille(k))*(l_arete(e(j))/d_arete(e(j)))
+                            end if
+                        end if
+                    end if   
+                end do
+            end do
+            
+        end subroutine make_A_matrix
+            
 
         
         subroutine make_A_COO(dt, nb_mailles, aire_maille, l_arete, d_arete, ar, trig,   &
@@ -92,7 +93,7 @@ module mod_resolution
 ! Variables locales
             integer                                                     :: i, j, k
             integer, dimension(nb_max_sommets)                          :: e
-            real(kind = pr)                                             :: Aii, Aik
+            real(kind = pr)                                             :: Aii, Aik, Aki
 
             allocate(A_row(0), A_col(0), A_val(0))
 
@@ -104,7 +105,7 @@ module mod_resolution
 ! Ainsi, pour chaque maille, le tableau e recupere et stocke les aretes de celle-ci puis on ajoute la
 ! la contribution de chaque arete aux differents termes de A
                 do j = 1, nb_max_sommets
-                    Aik = 0._pr
+                    Aik = 0._pr ; Aki = 0._pr
                     if (e(j) /= 0) then
                         k = trig(e(j), 2)
                         if (k == 0 .AND. (cl_arete_bord(e(j)) == 10 .OR. cl_arete_bord(e(j)) == 11)) then
@@ -118,12 +119,13 @@ module mod_resolution
                             Aii = Aii + (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))
                             if (k /= i) then
                                 Aik = Aik - (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))
+                                Aki = Aki - (dt/aire_maille(k))*(l_arete(e(j))/d_arete(e(j)))
 ! Allocation pour A(i, k)
                                 call push_back_int(A_row, i) ; call push_back_int(A_col, k)
                                 call push_back_real(A_val, Aik)
 ! Allocation pour A(k, i)
                                 call push_back_int(A_row, k) ; call push_back_int(A_col, i)
-                                call push_back_real(A_val, Aik)
+                                call push_back_real(A_val, Aki)
                             end if
                         end if
                     end if
@@ -252,12 +254,55 @@ module mod_resolution
         end do
 
         end subroutine make_b
+
+
+        subroutine conjugate_gradient(row_CSR, col_CSR, val_CSR, x0, bn, x)
+
+! Entrees de la subroutine
+            integer, dimension(:), intent(in)                           :: row_CSR, col_CSR
+            real(kind = pr), dimension(:), intent(in)                   :: val_CSR, x0, bn
+
+! Sortie de la subroutine :
+!       x : Resultat de l'algorithme
+            real(kind = pr), dimension(1:size(x0)), intent(out)         :: x
+
+! Variables locales
+            integer                                                     :: k
+            real(kind = pr)                                             :: rho0, rho, delta, alpha, gamma
+            real(kind = pr), dimension(1:size(x0))                      :: r, p, q, result
+
+            call CSR_dot_product(row_CSR, col_CSR, val_CSR, x0, result)
+            x = x0 ; r = bn - result ; p = r
+            k = 0
+            rho0 = dot_product(r, r)
+
+            do while (norm2(r)/norm2(bn) > epsilon .AND. k <= Nmax)
+                call CSR_dot_product(row_CSR, col_CSR, val_CSR, p, q)
+                delta = dot_product(p, q)
+
+                if (delta < 1e-15) then
+                    return
+                end if
+                alpha = rho0/delta
+
+                x = x + alpha*p
+                r = r - alpha*q
+                rho = dot_product(r, r)
+
+                gamma = rho/rho0
+                p = gamma*p + r
+                rho0 = rho
+                k = k + 1
+            end do
+
+        end subroutine conjugate_gradient
   
 ! ----------------------------------------------------------------------------------------------
 ! Subroutines annexes implementant quelques methodes elementaires :
 !       push_back_int
 !       push_back_real
 !       sort_A_elements
+!       CSR_dot_product
 ! ----------------------------------------------------------------------------------------------
 
         subroutine push_back_int(vector, new_element)
@@ -285,6 +330,7 @@ module mod_resolution
             deallocate(temp)
             
         end subroutine push_back_int
+
 
         subroutine push_back_real(vector, new_element)
 
@@ -343,5 +389,34 @@ module mod_resolution
             end do
 
         end subroutine sort_A_elements
+
+
+        subroutine CSR_dot_product(row_CSR, col_CSR, val_CSR, x, result)
+
+! Entrees de la subroutine
+            integer, dimension(:), intent(in)                           :: row_CSR, col_CSR
+            real(kind = pr), dimension(:), intent(in)                   :: val_CSR, x
+
+! Sortie de la subroutine :
+!       result(1:size(x)) : Le resultat du produit matrice vecteur
+            real(kind = pr), dimension(1:size(x)), intent(out)          :: result
+
+! Variables locales
+            integer                                                     :: i, j
+
+            result = 0._pr
+
+            if (size(row_CSR) - 1 /= size(x)) then
+                print *, "Produit incorrect !"
+                return
+            else
+                do i = 1, size(x)
+                    do j = row_CSR(i), row_CSR(i+1)-1
+                        result(i) = result(i) + x(col_CSR(j+1)) * val_CSR(j+1)
+                    end do
+                end do
+            end if
+
+        end subroutine CSR_dot_product
 
 end module mod_resolution
