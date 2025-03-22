@@ -111,10 +111,10 @@ program chaleur
     ! call make_A_matrix(0.5_pr, nb_mailles, aire_maille, l_arete, d_arete, &
     ! &                  ar, trig, cl_arete_bord, A)
     
-    print *, "A = "
-    do i = 1, nb_mailles
-        print *, A(i, :)    
-    end do
+    ! print *, "A = "
+    ! do i = 1, nb_mailles
+    !     print *, A(i, :)    
+    ! end do
 
     ! call make_A_COO(0.5_pr, nb_mailles, aire_maille, l_arete, d_arete, &
     ! &                  ar, trig, cl_arete_bord, A_row, A_col, A_val)
@@ -122,23 +122,25 @@ program chaleur
     call make_A_CSR(0.5_pr, nb_mailles, aire_maille, l_arete, d_arete,      &
     &                  ar, trig, cl_arete_bord, row_CSR, col_CSR, val_CSR)
 
-    do i = 1, size(row_CSR)
-        print *, row_CSR(i)
-    end do
-    do i = 1, size(col_CSR)
-        print *, col_CSR(i)
-    end do
-    do i = 1, size(val_CSR)
-        print *, val_CSR(i)
-    end do
+    ! do i = 1, size(row_CSR)
+    !     print *, row_CSR(i)
+    ! end do
+    ! do i = 1, size(col_CSR)
+    !     print *, col_CSR(i)
+    ! end do
+    ! do i = 1, size(val_CSR)
+    !     print *, val_CSR(i)
+    ! end do
+
+    print *, size(row_CSR), size(col_CSR), size(val_CSR)
 
     call make_b(0.5_pr, nb_mailles, aire_maille, l_arete, d_arete, ar,    &
     &          trig, cl_arete_bord, Tn, Phih, Phib, Tg, Td, b)
-    print *, "b = "
-    print *, b
+    print *, "size b = "
+    print *, size(b)
 
-    print *, "Tn = "
-    print *, Tn
+    ! print *, "Tn = "
+    ! print *, Tn
 
     deallocate(sommets_maille, cl_arete_bord, aire_maille, l_arete, d_arete &
     &          , noeud_maille, ar, trig, coord_noeud, milieu_arete, Tn, Tnp1)
