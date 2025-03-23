@@ -213,8 +213,8 @@ module mod_resolution
         end subroutine make_A_CSR
 
 
-        subroutine make_b(dt, t, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, ar,   &
-        &                 trig, cl_arete_bord, Tn, b)
+        subroutine make_b(dt, t, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, milieu_maille,    &
+        &                 ar, trig, cl_arete_bord, Tn, b)
 
 ! Entrees de la subroutine
         integer, intent(in)                                         :: nb_mailles
@@ -222,7 +222,7 @@ module mod_resolution
         integer, dimension(:, :), intent(in)                        :: ar, trig
         real(kind = pr), intent(in)                                 :: dt, t
         real(kind = pr), dimension(:), intent(in)                   :: aire_maille, l_arete, d_arete, Tn
-        real(kind = pr), dimension(:, :), intent(in)                :: milieu_arete
+        real(kind = pr), dimension(:, :), intent(in)                :: milieu_arete, milieu_maille
 
 ! Sortie de la subroutine :
 !       b(1:nb_mailles) : Second membre de la formulation matricielle du schema temporel
@@ -253,7 +253,7 @@ module mod_resolution
                     end if
                 end if
             end do
-            b(i) = bi + Tn(i)
+            b(i) = bi + Tn(i) + dt*Terme_source(milieu_maille(i, :))
         end do
 
         end subroutine make_b

@@ -119,7 +119,7 @@ module mod_maillage
 ! Condtions aux limites sur les aretes de bord
             call cl_arete(P, e, trig, cl_arete_bord)
 
-            deallocate(e, P_centre)
+            deallocate(e)
 
         end subroutine maillage
 
@@ -246,7 +246,7 @@ module mod_maillage
             real(kind = pr), dimension(:, :), intent(in)                :: P
 
 ! Sortie de la subroutine :
-!       barycentre_maille : Tableau tel que barycentre_maille(i) = barycentre de
+!       barycentre_maille : Tableau tel que barycentre_maille(i, 1:2) = barycentre de
 ! la maille i
             real(kind = pr), dimension(:, :), allocatable, intent(out)  :: barycentre_maille
 

@@ -14,8 +14,8 @@ program chaleur
     integer, dimension(:), allocatable              :: sommets_maille, cl_arete_bord, row_CSR, col_CSR
     integer, dimension(:, :), allocatable           :: noeud_maille, ar, trig
 
-    real(kind = pr)                                 :: t, tmax, dt, sommeDt, Fie
-    real(kind = pr), dimension(:), allocatable      :: aire_maille, l_arete, d_arete, Tn, Tnp1, val_CSR, b
+    real(kind = pr)                                 :: t, tmax, dt, sommeDt, Fie, x1
+    real(kind = pr), dimension(:), allocatable      :: aire_maille, l_arete, d_arete, Tn, Tnp1, val_CSR, b, C
     real(kind = pr), dimension(:, :), allocatable   :: coord_noeud, milieu_arete, milieu_maille, A
 
 ! Lecture dans le fichier parameters.dat :
@@ -26,7 +26,7 @@ program chaleur
     close(10)
 
 ! Lecture du maillage
-    call maillage("TYP2/"//fichier, nb_mailles, nb_aretes, sommets_maille, noeud_maille, coord_noeud &
+    call maillage("TYP2/"//fichier, nb_mailles, nb_aretes, sommets_maille, noeud_maille, coord_noeud            &
     &             , aire_maille, l_arete, d_arete, milieu_arete, milieu_maille, ar, trig, cl_arete_bord)
 
 
@@ -85,18 +85,18 @@ program chaleur
                 if (k == 0) then
                     if ((10 <= cl_arete_bord(e)) .AND. (cl_arete_bord(e) <= 19)) then
 ! On est sur une arete de bord avec une condition de Dirichlet
-                            Fie = -D(milieu_arete(e, :))*(Dirichlet(e, cl_arete_bord, t, milieu_arete) - Tn(i))/d_arete(e)
-                            Tnp1(i) = Tnp1(i) - (dt/aire_maille(i))*l_arete(i)*Fie
+                        Fie = -D(milieu_arete(e, :))*(Dirichlet(e, cl_arete_bord, t, milieu_arete) - Tn(i))/d_arete(e)
+                        Tnp1(i) = Tnp1(i) - (dt/aire_maille(i))*l_arete(i)*Fie
                     else if ((20 <= cl_arete_bord(e) .AND. cl_arete_bord(e) <= 29)) then
 ! On est sur une arete de bord avec une condition de Neumann
-                            Fie = Neumann(e, cl_arete_bord, t, milieu_arete)
-                            Tnp1(i) = Tnp1(i) - (dt/aire_maille(i))*l_arete(i)*Fie
+                        Fie = Neumann(e, cl_arete_bord, t, milieu_arete)
+                        Tnp1(i) = Tnp1(i) - (dt/aire_maille(i))*l_arete(i)*Fie
                     end if
 
                 else
                     Fie = -D(milieu_arete(e, :))*(Tn(k) - Tn(i))/d_arete(e)
-                    Tnp1(i) = Tnp1(i) - (dt/aire_maille(i))*l_arete(e)*Fie
-                    Tnp1(k) = Tnp1(k) + (dt/aire_maille(k))*l_arete(e)*Fie
+                    Tnp1(i) = Tnp1(i) - (dt/aire_maille(i))*l_arete(e)*Fie + dt*Terme_source(milieu_maille(i, :))
+                    Tnp1(k) = Tnp1(k) + (dt/aire_maille(k))*l_arete(e)*Fie + dt*Terme_source(milieu_maille(k, :))
 
                 end if
                 
@@ -127,7 +127,7 @@ program chaleur
         !     print *, A(i, :)
         ! end do
 
-        call make_A_CSR(dt, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, ar,    &
+        call make_A_CSR(dt, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, ar,                    &
         &               trig, cl_arete_bord, row_CSR, col_CSR, val_CSR)
 
         ! print *, "row_CSR", row_CSR
@@ -136,8 +136,8 @@ program chaleur
 
         do j = 1, n
             
-            call make_b(dt, t+dt, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, ar,    &
-            &           trig, cl_arete_bord, Tn, b)
+            call make_b(dt, t+dt, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, milieu_maille,   &
+            &           ar, trig, cl_arete_bord, Tn, b)
 
             call conjugate_gradient(row_CSR, col_CSR, val_CSR, Tn, b, Tnp1)
 
