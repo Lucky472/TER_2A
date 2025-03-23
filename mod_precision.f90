@@ -6,7 +6,7 @@ module mod_precision
     real(kind = pr), parameter  :: pi = 4._pr*ATAN(1._pr)
     real(kind = pr), parameter  :: epsilon = 1e-6
 
-! Note : Il faut cfl <= 0.95 pour que le schema V.F converge sur mesh3_3
+! Note : Il faut cfl <= 0.95 pour que le schema V.F explicite converge sur mesh3_3
     real(kind = pr)             :: cfl = 0.95
 
 end module mod_precision

@@ -1,6 +1,7 @@
 module mod_maillage
 
     use mod_precision
+    use mod_caracteristiques
     use mod_tri_maillage
 
 ! ----------------------------------------------------------------------------------------------
@@ -20,7 +21,7 @@ module mod_maillage
     contains
 
         subroutine maillage(fichier, nb_mailles, nb_aretes, sommets_maille, S, P, aire_maille &
-        &                   , l_arete, d_arete, milieu_arete, ar, trig, cl_arete_bord)
+        &                   , l_arete, d_arete, milieu_arete, P_centre, ar, trig, cl_arete_bord)
 
 ! Fichier d'entree
             character(len = *), intent(in)                              :: fichier
@@ -38,6 +39,7 @@ module mod_maillage
 !       d_arete : Tableau tel que d_arete(e) = distance d_e de Fie
 !       milieu_arete : Tableau tel que milieu_arete(e, 1:2) soient les coordonnes du centre
 ! de l'arete e
+!       P_centre : Tableau tel que P_centre(i, 1:2) soient les coordonnes du centre de la maille i
 !       ar : Tableau tel que ar(i, 1:nb_max_sommets) soient les numeros des aretes formant la maille i
 ! Note : ar(i, nb_max_sommets) = 0 lorsque la maille i est formee par (nb_max_sommets - 1) aretes
 !       trig : Tableau tel que trig(e, 1:2) soient le numero des mailles ayant pour arete commune
@@ -54,12 +56,11 @@ module mod_maillage
             integer, dimension(:), allocatable, intent(out)             :: sommets_maille, cl_arete_bord
             integer, dimension(:, :), allocatable, intent(out)          :: S, ar, trig
             real(kind = pr), dimension(:), allocatable, intent(out)     :: aire_maille, l_arete, d_arete
-            real(kind = pr), dimension(:, :), allocatable, intent(out)  :: P, milieu_arete
+            real(kind = pr), dimension(:, :), allocatable, intent(out)  :: P, milieu_arete, P_centre
 
 ! Variables locales
             integer                                                     :: i, nb_noeuds, tg, td
             integer, dimension(: ,:), allocatable                       :: e
-            real(kind = pr), dimension(:, :), allocatable               :: P_centre
             real(kind = pr), dimension(2)                               :: A, B, Gi, Gk, Xe
 
 ! Lecture du maillage
@@ -313,10 +314,10 @@ module mod_maillage
 ! Teste les differents cotes de maille i
                     if (ai(1) == 0._pr .and. aj(1) == 0._pr) then           ! Bord gauche
                         cl_arete_bord(i) = 10
-                    else if (ai(1) == 1._pr .and. aj(1) == 1._pr) then      ! Bord droit
+                    else if (ai(1) == L .and. aj(1) == L) then              ! Bord droit
                         cl_arete_bord(i) = 11
                     else if (ai(2) == 0._pr .and. aj(2) == 0._pr          & ! Bord bas
-                    &       .or. ai(2) == 1._pr .and. aj(2) == 1._pr) then  ! Bord haut
+                    &       .or. ai(2) == H .and. aj(2) == H) then          ! Bord haut
                         cl_arete_bord(i) = 20
                     end if
 

@@ -1,6 +1,7 @@
 module mod_resolution
 
     use mod_precision
+    use mod_caracteristiques
     use mod_maillage
 
 ! ----------------------------------------------------------------------------------------------
@@ -9,7 +10,7 @@ module mod_resolution
 !       make_A_COO
 !       make_A_CSR
 !       make_b
-!       conjugate_gradient (reste a faire)
+!       conjugate_gradient
 ! ----------------------------------------------------------------------------------------------
 
     implicit none
@@ -17,8 +18,8 @@ module mod_resolution
     contains
 
 ! Subroutine a des fins de verification : creee la matrice A sous forme pleine
-        subroutine make_A_matrix(dt, nb_mailles, aire_maille, l_arete, d_arete, ar, trig,   &
-        &                        cl_arete_bord, A)
+        subroutine make_A_matrix(dt, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, ar,  &
+        &                        trig, cl_arete_bord, A)
 
 !
             integer, intent(in)                                         :: nb_mailles
@@ -26,6 +27,7 @@ module mod_resolution
             integer, dimension(:, :), intent(in)                        :: ar, trig
             real(kind = pr), intent(in)                                 :: dt
             real(kind = pr), dimension(:), intent(in)                   :: aire_maille, l_arete, d_arete
+            real(kind = pr), dimension(:, :), intent(in)                :: milieu_arete
 
 !
             real(kind = pr), dimension(:, :), allocatable, intent(out)  :: A
@@ -49,16 +51,16 @@ module mod_resolution
                         k = trig(e(j), 2)
                         if (k == 0 .AND. (cl_arete_bord(e(j)) == 10 .OR. cl_arete_bord(e(j)) == 11)) then
 ! On est sur une arete de bord avec une condition de Dirichlet
-                            A(i, i) = A(i, i) + (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))
+                            A(i, i) = A(i, i) + (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))*D(milieu_arete(e(j), :))
                         else if (k == 0 .AND. cl_arete_bord(e(j)) == 20) then
 ! On est sur une arete de bord avec une condition de Neumann
                             A(i, i) = A(i, i)
                         else if (k /= 0) then
 ! On est sur une arete interieure
-                            A(i, i) = A(i, i) + (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))
+                            A(i, i) = A(i, i) + (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))*D(milieu_arete(e(j), :))
                             if (k /= i) then
-                                A(i, k) = A(i, k) - (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))
-                                A(k, i) = A(k, i) - (dt/aire_maille(k))*(l_arete(e(j))/d_arete(e(j)))
+                                A(i, k) = A(i, k) - (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))*D(milieu_arete(e(j), :))
+                                A(k, i) = A(k, i) - (dt/aire_maille(k))*(l_arete(e(j))/d_arete(e(j)))*D(milieu_arete(e(j), :))
                             end if
                         end if
                     end if   
@@ -69,8 +71,8 @@ module mod_resolution
             
 
         
-        subroutine make_A_COO(dt, nb_mailles, aire_maille, l_arete, d_arete, ar, trig,   &
-        &                        cl_arete_bord, A_row, A_col, A_val)
+        subroutine make_A_COO(dt, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, ar,  &
+        &                     trig, cl_arete_bord, A_row, A_col, A_val)
 
 ! Entrees de la subroutine
             integer, intent(in)                                         :: nb_mailles
@@ -78,6 +80,7 @@ module mod_resolution
             integer, dimension(:, :), intent(in)                        :: ar, trig
             real(kind = pr), intent(in)                                 :: dt
             real(kind = pr), dimension(:), intent(in)                   :: aire_maille, l_arete, d_arete
+            real(kind = pr), dimension(:, :), intent(in)                :: milieu_arete
 
 ! Sorties de la subroutine :
 !       A_row(1:nb_elements_non_nuls) : Tableau row_COO, ie l'indice i d'un element non nul de la matrice A
@@ -110,16 +113,16 @@ module mod_resolution
                         k = trig(e(j), 2)
                         if (k == 0 .AND. (cl_arete_bord(e(j)) == 10 .OR. cl_arete_bord(e(j)) == 11)) then
 ! On est sur une arete de bord avec une condition de Dirichlet
-                            Aii = Aii + (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))
+                            Aii = Aii + (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))*D(milieu_arete(e(j), :))
                         else if (k == 0 .AND. cl_arete_bord(e(j)) == 20) then
 ! On est sur une arete de bord avec une condition de Neumann
                             Aii = Aii
                         else if (k /= 0) then
 ! On est sur une arete interieure
-                            Aii = Aii + (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))
+                            Aii = Aii + (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))*D(milieu_arete(e(j), :))
                             if (k /= i) then
-                                Aik = Aik - (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))
-                                Aki = Aki - (dt/aire_maille(k))*(l_arete(e(j))/d_arete(e(j)))
+                                Aik = Aik - (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))*D(milieu_arete(e(j), :))
+                                Aki = Aki - (dt/aire_maille(k))*(l_arete(e(j))/d_arete(e(j)))*D(milieu_arete(e(j), :))
 ! Allocation pour A(i, k)
                                 call push_back_int(A_row, i) ; call push_back_int(A_col, k)
                                 call push_back_real(A_val, Aik)
@@ -138,8 +141,8 @@ module mod_resolution
         end subroutine make_A_COO
 
 
-        subroutine make_A_CSR(dt, nb_mailles, aire_maille, l_arete, d_arete, ar, trig,  &
-        &                   cl_arete_bord, row_CSR, col_CSR, val_CSR)
+        subroutine make_A_CSR(dt, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, ar,  &
+        &                     trig, cl_arete_bord, row_CSR, col_CSR, val_CSR)
 
 ! Entrees de la subroutine
             integer, intent(in)                                         :: nb_mailles
@@ -147,6 +150,7 @@ module mod_resolution
             integer, dimension(:, :), intent(in)                        :: ar, trig
             real(kind = pr), intent(in)                                 :: dt
             real(kind = pr), dimension(:), intent(in)                   :: aire_maille, l_arete, d_arete
+            real(kind = pr), dimension(:, :), intent(in)                :: milieu_arete
         
 ! Sorties de la subroutine :
 !       row_CSR(1:nb_mailles+1) : Tableau row_CSR, ie row_CSR(i) = nombre d'elements non nuls de A sur
@@ -165,8 +169,8 @@ module mod_resolution
             integer, dimension(:), allocatable                          :: row_COO, col_COO, row_sorted, col_sorted
             real(kind = pr), dimension(:), allocatable                  :: val_COO, val_sorted
 
-            call make_A_COO(dt, nb_mailles, aire_maille, l_arete, d_arete, ar, trig,    &
-            &               cl_arete_bord, row_COO, col_COO, val_COO)
+            call make_A_COO(dt, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, ar,    &
+            &               trig, cl_arete_bord, row_COO, col_COO, val_COO)
         
             n = size(row_COO)
     
@@ -185,7 +189,7 @@ module mod_resolution
         
 ! Construction de col_CSR et val_CSR en évitant les doublons
             do i = 1, n
-                if (i == 1 .or. row_sorted(i) /= row_sorted(i-1) .or. col_sorted(i) /= col_sorted(i-1)) then
+                if (i == 1 .OR. row_sorted(i) /= row_sorted(i-1) .OR. col_sorted(i) /= col_sorted(i-1)) then
                     unique_count = unique_count + 1
                     col_CSR(unique_count) = col_sorted(i)
                     val_CSR(unique_count) = val_sorted(i)
@@ -209,15 +213,16 @@ module mod_resolution
         end subroutine make_A_CSR
 
 
-        subroutine make_b(dt, nb_mailles, aire_maille, l_arete, d_arete, ar, trig,  &
-        &                 cl_arete_bord, Tn, Phih, Phib, Tg, Td, b)
+        subroutine make_b(dt, t, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, ar,   &
+        &                 trig, cl_arete_bord, Tn, b)
 
 ! Entrees de la subroutine
         integer, intent(in)                                         :: nb_mailles
         integer, dimension(:), intent(in)                           :: cl_arete_bord
         integer, dimension(:, :), intent(in)                        :: ar, trig
-        real(kind = pr), intent(in)                                 :: dt, Phih, Phib, Tg, Td
+        real(kind = pr), intent(in)                                 :: dt, t
         real(kind = pr), dimension(:), intent(in)                   :: aire_maille, l_arete, d_arete, Tn
+        real(kind = pr), dimension(:, :), intent(in)                :: milieu_arete
 
 ! Sortie de la subroutine :
 !       b(1:nb_mailles) : Second membre de la formulation matricielle du schema temporel
@@ -238,15 +243,13 @@ module mod_resolution
             do j = 1, nb_max_sommets
                 if (e(j) /= 0) then
                     k = trig(e(j), 2)
-                    if (k == 0 .AND. (cl_arete_bord(e(j)) == 10)) then
-! On est sur une arete de bord avec une condition de Dirichlet 1 (ici Tg)
-                        bi = bi + (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))*Tg
-                    else if (k == 0 .AND. (cl_arete_bord(e(j)) == 11)) then
-! On est sur une arete de bord avec une condition de Dirichlet 2 (ici Td)
-                        bi = bi + (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))*Td
-                    else if (k == 0 .AND. (cl_arete_bord(e(j)) == 20)) then
+                    if (k == 0 .AND. (10 <= cl_arete_bord(e(j))) .AND. (cl_arete_bord(e(j)) <= 19)) then
+! On est sur une arete de bord avec une condition de Dirichlet
+                        bi = bi + (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))*D(milieu_arete(e(j), :))*    &
+                        &    Dirichlet(e(j), cl_arete_bord, t, milieu_arete)
+                    else if (k == 0 .AND. (20 <= cl_arete_bord(e(j))) .AND. (cl_arete_bord(e(j)) <= 29)) then
 ! On est sur une arete de bord avec une condition de Neumann (ici Phih = Phib)
-                        bi = bi + (dt/aire_maille(i))*l_arete(e(j))*Phih
+                        bi = bi - (dt/aire_maille(i))*l_arete(e(j))*Neumann(e(j), cl_arete_bord, t, milieu_arete)
                     end if
                 end if
             end do
