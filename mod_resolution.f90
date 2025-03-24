@@ -39,28 +39,25 @@ module mod_resolution
             allocate(A(1:nb_mailles, 1:nb_mailles))
             
             A = 0._pr
-            
-            do i = 1 , nb_mailles
-                A(i, i) = 1._pr
-            end do
-            
+
             do i = 1, nb_mailles
+                A(i, i) = aire_maille(i)
                 e = ar(i, :)
                 do j = 1, nb_max_sommets
                     if (e(j) /= 0) then
                         k = trig(e(j), 2)
                         if (k == 0 .AND. (cl_arete_bord(e(j)) == 10 .OR. cl_arete_bord(e(j)) == 11)) then
 ! On est sur une arete de bord avec une condition de Dirichlet
-                            A(i, i) = A(i, i) + (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))*D(milieu_arete(e(j), :))
+                            A(i, i) = A(i, i) + dt*(l_arete(e(j))/d_arete(e(j)))*D(milieu_arete(e(j), :))
                         else if (k == 0 .AND. cl_arete_bord(e(j)) == 20) then
 ! On est sur une arete de bord avec une condition de Neumann
                             A(i, i) = A(i, i)
                         else if (k /= 0) then
 ! On est sur une arete interieure
-                            A(i, i) = A(i, i) + (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))*D(milieu_arete(e(j), :))
+                            A(i, i) = A(i, i) + dt*(l_arete(e(j))/d_arete(e(j)))*D(milieu_arete(e(j), :))
                             if (k /= i) then
-                                A(i, k) = A(i, k) - (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))*D(milieu_arete(e(j), :))
-                                A(k, i) = A(k, i) - (dt/aire_maille(k))*(l_arete(e(j))/d_arete(e(j)))*D(milieu_arete(e(j), :))
+                                A(i, k) = A(i, k) - dt*(l_arete(e(j))/d_arete(e(j)))*D(milieu_arete(e(j), :))
+                                A(k, i) = A(i, k)
                             end if
                         end if
                     end if   
@@ -96,39 +93,38 @@ module mod_resolution
 ! Variables locales
             integer                                                     :: i, j, k
             integer, dimension(nb_max_sommets)                          :: e
-            real(kind = pr)                                             :: Aii, Aik, Aki
+            real(kind = pr)                                             :: Aii, Aik
 
             allocate(A_row(0), A_col(0), A_val(0))
 
             do i = 1, nb_mailles
-                Aii = 1._pr
+                Aii = aire_maille(i)
                 e = ar(i, :)
 ! N.B : On ne peut pas contruire la matrice A comme on le fait pour les flux, ie faire une boucle sur les
 ! aretes et ajouter (resp. soustraire) leur contribution aux deux mailles
 ! Ainsi, pour chaque maille, le tableau e recupere et stocke les aretes de celle-ci puis on ajoute la
 ! la contribution de chaque arete aux differents termes de A
                 do j = 1, nb_max_sommets
-                    Aik = 0._pr ; Aki = 0._pr
+                    Aik = 0._pr
                     if (e(j) /= 0) then
                         k = trig(e(j), 2)
                         if (k == 0 .AND. (cl_arete_bord(e(j)) == 10 .OR. cl_arete_bord(e(j)) == 11)) then
 ! On est sur une arete de bord avec une condition de Dirichlet
-                            Aii = Aii + (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))*D(milieu_arete(e(j), :))
+                            Aii = Aii + dt*(l_arete(e(j))/d_arete(e(j)))*D(milieu_arete(e(j), :))
                         else if (k == 0 .AND. cl_arete_bord(e(j)) == 20) then
 ! On est sur une arete de bord avec une condition de Neumann
                             Aii = Aii
                         else if (k /= 0) then
 ! On est sur une arete interieure
-                            Aii = Aii + (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))*D(milieu_arete(e(j), :))
+                            Aii = Aii + dt*(l_arete(e(j))/d_arete(e(j)))*D(milieu_arete(e(j), :))
                             if (k /= i) then
-                                Aik = Aik - (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))*D(milieu_arete(e(j), :))
-                                Aki = Aki - (dt/aire_maille(k))*(l_arete(e(j))/d_arete(e(j)))*D(milieu_arete(e(j), :))
+                                Aik = Aik - dt*(l_arete(e(j))/d_arete(e(j)))*D(milieu_arete(e(j), :))
 ! Allocation pour A(i, k)
                                 call push_back_int(A_row, i) ; call push_back_int(A_col, k)
                                 call push_back_real(A_val, Aik)
 ! Allocation pour A(k, i)
                                 call push_back_int(A_row, k) ; call push_back_int(A_col, i)
-                                call push_back_real(A_val, Aki)
+                                call push_back_real(A_val, Aik)
                             end if
                         end if
                     end if
@@ -245,15 +241,15 @@ module mod_resolution
                     k = trig(e(j), 2)
                     if (k == 0 .AND. (10 <= cl_arete_bord(e(j))) .AND. (cl_arete_bord(e(j)) <= 19)) then
 ! On est sur une arete de bord avec une condition de Dirichlet
-                        bi = bi + (dt/aire_maille(i))*(l_arete(e(j))/d_arete(e(j)))*D(milieu_arete(e(j), :))*    &
+                        bi = bi + dt*(l_arete(e(j))/d_arete(e(j)))*D(milieu_arete(e(j), :))*    &
                         &    Dirichlet(e(j), cl_arete_bord, t, milieu_arete)
                     else if (k == 0 .AND. (20 <= cl_arete_bord(e(j))) .AND. (cl_arete_bord(e(j)) <= 29)) then
 ! On est sur une arete de bord avec une condition de Neumann (ici Phih = Phib)
-                        bi = bi - (dt/aire_maille(i))*l_arete(e(j))*Neumann(e(j), cl_arete_bord, t, milieu_arete)
+                        bi = bi - dt*l_arete(e(j))*Neumann(e(j), cl_arete_bord, t, milieu_arete)
                     end if
                 end if
             end do
-            b(i) = bi + Tn(i) + dt*Terme_source(milieu_maille(i, :))
+            b(i) = bi + aire_maille(i)*(Tn(i) + dt*Terme_source(milieu_maille(i, :)))
         end do
 
         end subroutine make_b

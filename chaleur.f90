@@ -95,10 +95,13 @@ program chaleur
 
                 else
                     Fie = -D(milieu_arete(e, :))*(Tn(k) - Tn(i))/d_arete(e)
-                    Tnp1(i) = Tnp1(i) - (dt/aire_maille(i))*l_arete(e)*Fie + dt*Terme_source(milieu_maille(i, :))
-                    Tnp1(k) = Tnp1(k) + (dt/aire_maille(k))*l_arete(e)*Fie + dt*Terme_source(milieu_maille(k, :))
+                    Tnp1(i) = Tnp1(i) - (dt/aire_maille(i))*l_arete(e)*Fie
+                    Tnp1(k) = Tnp1(k) + (dt/aire_maille(k))*l_arete(e)*Fie
 
                 end if
+
+                Tnp1(i) = Tnp1(i) + dt*Terme_source(milieu_maille(i, :))
+                Tnp1(k) = Tnp1(k) + dt*Terme_source(milieu_maille(k, :))
                 
             end do
 
@@ -123,6 +126,7 @@ program chaleur
         ! call make_A_matrix(dt, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, ar, &
         ! &                  trig, cl_arete_bord, A)
 
+        ! print *, "A = "
         ! do i = 1, 4
         !     print *, A(i, :)
         ! end do
