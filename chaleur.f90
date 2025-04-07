@@ -14,8 +14,8 @@ program chaleur
     integer, dimension(:), allocatable              :: sommets_maille, cl_arete_bord, row_CSR, col_CSR
     integer, dimension(:, :), allocatable           :: noeud_maille, ar, trig
 
-    real(kind = pr)                                 :: t, tmax, dt, sommeDt, Fie, x1
-    real(kind = pr), dimension(:), allocatable      :: aire_maille, l_arete, d_arete, Tn, Tnp1, val_CSR, b, C
+    real(kind = pr)                                 :: t, tmax, dt, sommeDt, Fie, x1, err
+    real(kind = pr), dimension(:), allocatable      :: aire_maille, l_arete, d_arete, Tn, Tnp1, val_CSR, b, T1, T2, T4
     real(kind = pr), dimension(:, :), allocatable   :: coord_noeud, milieu_arete, milieu_maille, A
 
 ! Lecture dans le fichier parameters.dat :
@@ -35,6 +35,9 @@ program chaleur
 ! Initialisation de Tnp1 et Tn
     Tn = Tinit(milieu_maille)
     Tnp1 = Tn
+
+! Initialisation du temps
+    t = 0._pr ; tmax = 1._pr
 
 ! ----------------------------------------------------------------------------------------------
 ! Choix du schema temporel
@@ -74,7 +77,6 @@ program chaleur
         dt = cfl*dt
 
 ! Implementation du schema
-        t = 0._pr ; tmax = 0.2_pr
         n = FLOOR(tmax/dt) + 1
 
         do j = 1, n
@@ -99,10 +101,11 @@ program chaleur
                     Tnp1(k) = Tnp1(k) + (dt/aire_maille(k))*l_arete(e)*Fie
 
                 end if
+            end do
 
+! Ajout du terme source
+            do i = 1, nb_mailles
                 Tnp1(i) = Tnp1(i) + dt*Terme_source(milieu_maille(i, :))
-                Tnp1(k) = Tnp1(k) + dt*Terme_source(milieu_maille(k, :))
-                
             end do
 
             Tn = Tnp1
@@ -115,12 +118,19 @@ program chaleur
 
         end do
 
+        err = 0._pr
+        do i = 1, nb_mailles
+            err = err + aire_maille(i)*(Tnp1(i) - Sol_ex(milieu_maille(i, :)))**2
+        end do
+
+        print *, MAXVAL(l_arete), SQRT(err)
+
 ! ----------------------------------------------------------------------------------------------
 ! Euler Implicite
 ! ----------------------------------------------------------------------------------------------
     case (2)
 
-        t = 0._pr ; tmax = 0.2_pr ; dt = 0.01_pr
+        dt = 0.1_pr
         n = FLOOR(tmax/dt) + 1
 
         ! call make_A_matrix(dt, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, ar, &
@@ -153,6 +163,13 @@ program chaleur
         end do
 
         ! print *, "b = ", b
+
+        err = 0._pr
+        do i = 1, nb_mailles
+            err = err + aire_maille(i)*(Tnp1(i) - Sol_ex(milieu_maille(i, :)))**2
+        end do
+
+        print *, MAXVAL(l_arete), SQRT(err)
 
     case default
         print *, "Il n'y a pas de schéma temporel associé à ce nombre ! A vous d'en implémenter un :)"

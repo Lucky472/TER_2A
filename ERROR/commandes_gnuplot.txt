@@ -1,0 +1,9 @@
+set logscale xy
+
+file = "err_EI_delau.dat"
+
+mc(x) = a*x+b
+fit mc(x) file using (log($1)):(log($2)) via a,b
+
+plot file using 1:2 title "euler \
+explicite" , exp(mc(log(x))) title sprintf("droite pente ordre %.3f", a)

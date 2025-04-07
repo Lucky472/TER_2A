@@ -141,11 +141,34 @@ module mod_caracteristiques
 
             x1 = milieu_maille(1, 1) ; x2 = milieu_maille(1, 2)
             if (((x1 - C(1))**2 + (x2 - C(2))**2) <= r**2) then
-                SGi = 300._pr
+                SGi = 1000._pr
             else
                 SGi = 0._pr
             end if
 
+! ----------------------------------------------------------------------------------------------
+! Cas manufacture
+! ----------------------------------------------------------------------------------------------
+            ! SGi = 1000._pr
+
         end function Terme_source
+
+
+        function Sol_ex(milieu_maille) result(Tex)
+! Entree de la fonction
+            real(kind = pr), dimension(1, 2), intent(in)            :: milieu_maille
+! Sortie de la fonction :
+!       SGi : Solution exacte evaluee au centre de la maille i
+            real(kind = pr)                                         :: Tex
+
+! Variables locales
+            real(kind = pr)                                         :: x1, x2, S, D, Tg, Td
+
+            S = 1000._pr ; D = 1._pr ; Tg = 100._pr ; Td = 100._pr
+
+            x1 = milieu_maille(1, 1) ; x2 = milieu_maille(1, 2)
+            Tex = -S/(2*D)*x1**2 + (Td - Tg + S/(2*D))*x1 + Tg
+            
+        end function Sol_ex
 
 end module mod_caracteristiques
