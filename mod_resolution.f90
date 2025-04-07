@@ -108,10 +108,10 @@ module mod_resolution
                     Aik = 0._pr
                     if (e(j) /= 0) then
                         k = trig(e(j), 2)
-                        if (k == 0 .AND. (cl_arete_bord(e(j)) == 10 .OR. cl_arete_bord(e(j)) == 11)) then
+                        if (k == 0 .AND. (10 <= cl_arete_bord(e(j))) .AND. (cl_arete_bord(e(j)) <= 19)) then
 ! On est sur une arete de bord avec une condition de Dirichlet
                             Aii = Aii + dt*(l_arete(e(j))/d_arete(e(j)))*D(milieu_arete(e(j), :))
-                        else if (k == 0 .AND. cl_arete_bord(e(j)) == 20) then
+                        else if (k == 0 .AND. (20 <= cl_arete_bord(e(j))) .AND. (cl_arete_bord(e(j)) <= 29)) then
 ! On est sur une arete de bord avec une condition de Neumann
                             Aii = Aii
                         else if (k /= 0) then
