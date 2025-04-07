@@ -118,13 +118,6 @@ program chaleur
 
         end do
 
-        err = 0._pr
-        do i = 1, nb_mailles
-            err = err + aire_maille(i)*(Tnp1(i) - Sol_ex(milieu_maille(i, :)))**2
-        end do
-
-        print *, MAXVAL(l_arete), SQRT(err)
-
 ! ----------------------------------------------------------------------------------------------
 ! Euler Implicite
 ! ----------------------------------------------------------------------------------------------
@@ -164,17 +157,17 @@ program chaleur
 
         ! print *, "b = ", b
 
-        err = 0._pr
-        do i = 1, nb_mailles
-            err = err + aire_maille(i)*(Tnp1(i) - Sol_ex(milieu_maille(i, :)))**2
-        end do
-
-        print *, MAXVAL(l_arete), SQRT(err)
-
     case default
         print *, "Il n'y a pas de schéma temporel associé à ce nombre ! A vous d'en implémenter un :)"
 
     end select
+
+    err = 0._pr
+    do i = 1, nb_mailles
+        err = err + aire_maille(i)*(Tnp1(i) - Sol_ex(milieu_maille(i, :)))**2
+    end do
+
+    print *, MAXVAL(l_arete), SQRT(err)
 
     deallocate(sommets_maille, cl_arete_bord, aire_maille, l_arete, d_arete &
     &          , noeud_maille, ar, trig, coord_noeud, milieu_arete, Tn, Tnp1)
