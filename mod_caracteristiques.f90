@@ -23,6 +23,34 @@ module mod_caracteristiques
     real(kind = pr), parameter                                      :: L = 1._pr
     real(kind = pr), parameter                                      :: H = 1._pr
 
+! Piece chauffee par un radiateur
+!       hb : Hauteur du bloc de beton
+!       hv : Hauteur de la vitre en verre (1 - 2*hb)
+!       eb : Epaisseur du bloc de beton
+!       ev : Epaisseur d'un vitrage
+!       ea : Epaisseur d'air entre chaque vitrage
+!       dm : Distance entre le bord gauche et le bloc de beton
+!       Tint : Temperature a l'interieur de la piece
+!       Text : Temperature a l'exterieur de la piece
+!       Lrad : Longueur du radiateur
+!       Hrad : Hauteur du radiateur
+!       Hsol : Distance entre le sol et le bas du radiateur
+!       drad : Distance entre le mur et le radiateur
+!       trad : Temps pendant lequel le radiateur emet une source de chaleur
+    real(kind = pr), parameter                                      :: hb = 0.2_pr
+    real(kind = pr), parameter                                      :: hv = 0.6_pr
+    real(kind = pr), parameter                                      :: eb = 0.3_pr
+    real(kind = pr), parameter                                      :: ev = 0.003_pr
+    real(kind = pr), parameter                                      :: ea = 0.009_pr
+    real(kind = pr), parameter                                      :: dm = 0.2_pr
+    real(kind = pr), parameter                                      :: Tint = 290._pr
+    real(kind = pr), parameter                                      :: Text = 278._pr
+    real(kind = pr), parameter                                      :: Lrad = 0.3_pr
+    real(kind = pr), parameter                                      :: Hrad = 0.2_pr
+    real(kind = pr), parameter                                      :: Hsol = 0.05_pr
+    real(kind = pr), parameter                                      :: drad = 0.05_pr
+    real(kind = pr), parameter                                      :: trad = 5_pr
+
     contains
 
         function D(milieu_arete) result (DXe)
@@ -34,15 +62,33 @@ module mod_caracteristiques
 !       DXe : Coefficient de diffusion evalue au centre de l'arete e
             real(kind = pr)                                         :: DXe
 
+! Variables locales
+            real(kind = pr)                                         :: e, x1, x2
+
+            x1 = milieu_arete(1, 1) ; x2 = milieu_arete(1, 2)
+
 ! ----------------------------------------------------------------------------------------------
 ! Coefficient de diffusion uniforme
 ! ----------------------------------------------------------------------------------------------
             DXe = 1._pr
 
 ! ----------------------------------------------------------------------------------------------
-! Coefficient de diffusion non-uniforme
+! Piece chauffee par un radiateur
 ! ----------------------------------------------------------------------------------------------
-            ! DXe = 1._pr + 1._pr/2*SIN(2*pi*milieu_arete(1,1))*SIN(2*pi*milieu_arete(1,2))
+! Epaisseur totale de la vitre
+            e = ea + 2*ev
+
+            if ((dm <= x1 .AND. x1 <= dm+eb) .AND. ((x2 <= hb) .OR. (1._pr - hb <= x2))) then
+! On est sur du beton
+                DXe = 1.03_pr
+            else if (((dm + eb - e <= x1 .AND. x1 <= dm + eb - e + ev) .OR. (dm + eb - ev <= x1  &
+            &         .AND. x1 <= dm + eb)) .AND. ((hb <= x2) .AND. (x2 <= hb + hv))) then
+! On est sur du verre
+                DXe = 0.93_pr
+            else
+! On est sur de l'air
+                DXe = 0.025_pr
+            end if
 
         end function D
 
@@ -57,15 +103,60 @@ module mod_caracteristiques
             real(kind = pr), dimension(:), allocatable              :: TinitGi
 
 ! Variables locales
-            integer                                                 :: n
+            integer                                                 :: nb_mailles, i
+            real(kind = pr)                                         :: e, x1, x2, Tm
 
-            n = size(milieu_maille, 1)
-            allocate(TinitGi(n))
+            nb_mailles = size(milieu_maille, 1)
+            allocate(TinitGi(nb_mailles))
 
 ! ----------------------------------------------------------------------------------------------
 ! Temperature initiale uniforme
 ! ----------------------------------------------------------------------------------------------
             TinitGi = 100._pr
+
+! ----------------------------------------------------------------------------------------------
+! Piece chauffee par un radiateur
+! ----------------------------------------------------------------------------------------------
+            e = ea + 2*ev
+
+            do i = 1, nb_mailles
+                x1 = milieu_maille(i, 1) ; x2 = milieu_maille(i, 2)
+                if (x1 <= dm) then
+! On est a l'exterieur
+                    TinitGi(i) = Text
+                else if (dm < x1 .AND. x1 <= dm + eb) then
+! On est au niveau du mur, on a quatre cas :
+!       On est dans le beton, on approxime par une temperature affine l'evolution de la temperature
+! dans le bloc
+!       On est a la hauteur de la vitre mais en dehors du double vitrage, on suppose que l'on est a
+! la temperature exterieure
+!       On est dans un des vitrages, on approxime par une temperature affine
+!       On est dans l'air entre les vitrages, on suppose que la temperature reste contante
+                    if (x2 < hb .OR. hb + hv < x2) then
+! On est dans le beton
+                        TinitGi(i) = (Tint - Text)/eb*(x1 - dm) + Text
+                    else if (hb <= x2 .AND. x2 <= hb + hv) then
+! Temperature moyenne entre l'exterieur et l'interieur, supposee presente dans l'air entre les vitrages
+                        Tm = (Tint + Text)/2
+                        if (x1 <= dm + eb - e) then
+! On est encore dans l'air libre
+                            TinitGi(i) = Text
+                        else if (dm + eb - e < x1 .AND. x1 < dm + eb - e + ev) then
+! On est sur le vitrage exterieur
+                            TinitGi(i) = (Tm - Text)/ev*(x1 - (dm + eb - e)) + Text
+                        else if (dm + eb - ev < x1 .AND. x1 < dm + eb) then
+! On est sur le vitrage interieur
+                            TinitGi(i) = (Tint - Tm)/ev*(x1 - (dm + eb - ev)) + Tm
+                        else if (dm + eb - e + ev <= x1 .AND. x1 <= dm + eb - ev) then
+! On est dans l'air entre les vitrages
+                            TinitGi(i) = Tm
+                        end if
+                    end if
+                else if (dm + eb < x1) then
+! On est a l'interieur
+                    TinitGi(i) = Tint
+                end if
+            end do
 
         end function Tinit
 
@@ -93,6 +184,17 @@ module mod_caracteristiques
                 TbXe = 100._pr
             end if
 
+! ----------------------------------------------------------------------------------------------
+! Piece chauffee par un radiateur
+! ----------------------------------------------------------------------------------------------
+            if (cl_arete_bord(e) == 10) then
+! On est sur le bord gauche
+                TbXe = Text
+            else if (cl_arete_bord(e) == 11) then
+! On est sur le bord droit
+                TbXe = Tint
+            end if
+
         end function Dirichlet
 
 
@@ -116,12 +218,21 @@ module mod_caracteristiques
                 PhibXe = 0._pr
             end if
 
+! ----------------------------------------------------------------------------------------------
+! Piece chauffee par un radiateur
+! ----------------------------------------------------------------------------------------------
+            if (cl_arete_bord(e) == 20) then
+! On est sur le bord haut ou bas
+                PhibXe = 0._pr
+            end if
+
         end function Neumann
 
 
-        function Terme_source(milieu_maille) result(SGi)
+        function Terme_source(t, milieu_maille) result(SGi)
 
 ! Entree de la fonction
+            real(kind = pr), intent(in)                             :: t
             real(kind = pr), dimension(1, 2), intent(in)            :: milieu_maille
 ! Sortie de la fonction :
 !       SGi : Terme source evalue au centre de la maille i
@@ -135,21 +246,39 @@ module mod_caracteristiques
 ! Cas de la plaque chauffante circulaire
 ! ----------------------------------------------------------------------------------------------
 ! Rayon de la plaque chauffante
-            r = 0.25_pr
-! Coordonees du centre de la plaque chauffante
-            C = 0.5_pr
+!             r = 0.25_pr
+! ! Coordonees du centre de la plaque chauffante
+!             C = 0.5_pr
 
-            x1 = milieu_maille(1, 1) ; x2 = milieu_maille(1, 2)
-            if (((x1 - C(1))**2 + (x2 - C(2))**2) <= r**2) then
-                SGi = 1000._pr
-            else
-                SGi = 0._pr
-            end if
+!             x1 = milieu_maille(1, 1) ; x2 = milieu_maille(1, 2)
+!             if (((x1 - C(1))**2 + (x2 - C(2))**2) <= r**2) then
+!                 SGi = 1000._pr
+!             else
+!                 SGi = 0._pr
+!             end if
 
 ! ----------------------------------------------------------------------------------------------
 ! Cas manufacture
 ! ----------------------------------------------------------------------------------------------
             ! SGi = 1000._pr
+
+! ----------------------------------------------------------------------------------------------
+! Piece chauffee par un radiateur
+! ----------------------------------------------------------------------------------------------
+            x1 = milieu_maille(1, 1) ; x2 = milieu_maille(1, 2)
+
+            if ((dm + eb + drad <= x1 .AND. x1 <= dm + eb + drad + Lrad) .AND. (Hsol <= x2      &
+            &    .AND. x2 <= Hrad)) then
+! On est bien dans la zone du radiateur
+                if (t<=trad) then
+! Le radiateur est en train d'emettre une source de chaleur
+                    SGi = 35._pr
+                else
+                    SGi = 0._pr
+                end if
+            else
+                SGi = 0._pr
+            end if
 
         end function Terme_source
 

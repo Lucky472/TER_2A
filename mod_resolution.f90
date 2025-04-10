@@ -249,7 +249,7 @@ module mod_resolution
                     end if
                 end if
             end do
-            b(i) = bi + aire_maille(i)*Tn(i) + dt*aire_maille(i)*Terme_source(milieu_maille(i, :))
+            b(i) = bi + aire_maille(i)*Tn(i) + dt*aire_maille(i)*Terme_source(t, milieu_maille(i, :))
         end do
 
         end subroutine make_b

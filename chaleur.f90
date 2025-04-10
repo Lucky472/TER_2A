@@ -37,7 +37,7 @@ program chaleur
     Tnp1 = Tn
 
 ! Initialisation du temps
-    t = 0._pr ; tmax = 1._pr
+    t = 0._pr ; tmax = 15._pr
 
 ! ----------------------------------------------------------------------------------------------
 ! Choix du schema temporel
@@ -105,13 +105,13 @@ program chaleur
 
 ! Ajout du terme source
             do i = 1, nb_mailles
-                Tnp1(i) = Tnp1(i) + dt*Terme_source(milieu_maille(i, :))
+                Tnp1(i) = Tnp1(i) + dt*Terme_source(t, milieu_maille(i, :))
             end do
 
             Tn = Tnp1
             t = t + dt
 
-            nplot = FLOOR(REAL(n)/10)
+            nplot = FLOOR(REAL(n)/100)
             if (j == 1 .or. MODULO(j, nplot) == 0) then
                 call sortie(j, Tn, sommets_maille, noeud_maille, coord_noeud)
             end if
@@ -123,7 +123,7 @@ program chaleur
 ! ----------------------------------------------------------------------------------------------
     case (2)
 
-        dt = 0.1_pr
+        dt = 0.5_pr
         n = FLOOR(tmax/dt) + 1
 
         ! call make_A_matrix(dt, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, ar, &

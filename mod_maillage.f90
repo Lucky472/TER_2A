@@ -318,7 +318,7 @@ module mod_maillage
                         cl_arete_bord(i) = 11
                     else if (ai(2) == 0._pr .and. aj(2) == 0._pr          & ! Bord bas
                     &       .or. ai(2) == H .and. aj(2) == H) then          ! Bord haut
-                        cl_arete_bord(i) = 11
+                        cl_arete_bord(i) = 20
                     end if
 
                 end if
