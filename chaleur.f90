@@ -14,8 +14,8 @@ program chaleur
     integer, dimension(:), allocatable              :: sommets_maille, cl_arete_bord, row_CSR, col_CSR
     integer, dimension(:, :), allocatable           :: noeud_maille, ar, trig
 
-    real(kind = pr)                                 :: t, tmax, dt, sommeDt, Fie, x1, err
-    real(kind = pr), dimension(:), allocatable      :: aire_maille, l_arete, d_arete, Tn, Tnp1, val_CSR, b, T1, T2, T4
+    real(kind = pr)                                 :: t, tmax, dt, sommeDt, Fie, x1, err, T1, T2, T4, p
+    real(kind = pr), dimension(:), allocatable      :: aire_maille, l_arete, d_arete, Tn, Tnp1, val_CSR, b
     real(kind = pr), dimension(:, :), allocatable   :: coord_noeud, milieu_arete, milieu_maille, A
 
 ! Lecture dans le fichier parameters.dat :
@@ -37,7 +37,7 @@ program chaleur
     Tnp1 = Tn
 
 ! Initialisation du temps
-    t = 0._pr ; tmax = 15._pr
+    t = 0._pr ; tmax = 1._pr
 
 ! ----------------------------------------------------------------------------------------------
 ! Choix du schema temporel
@@ -74,7 +74,7 @@ program chaleur
         end do
 
 ! Application du coefficient cfl sur dt
-        dt = cfl*dt
+        dt = cfl*dt/4
 
 ! Implementation du schema
         n = FLOOR(tmax/dt) + 1
@@ -118,12 +118,23 @@ program chaleur
 
         end do
 
+        err = 0._pr
+        do i = 1, nb_mailles
+            err = err + aire_maille(i)*Tnp1(i)**2
+        end do
+        print *, dt, err
+
+        T1 = 86909.886556140744 ; T2 = 86902.085097817297 ; T4 = 86898.184500552641
+
+        p = LOG((T1 - T2)/(T2 - T4))/LOG(2._pr)
+        print *, "p = ", p
+
 ! ----------------------------------------------------------------------------------------------
 ! Euler Implicite
 ! ----------------------------------------------------------------------------------------------
     case (2)
 
-        dt = 0.5_pr
+        dt = 0.1_pr/4
         n = FLOOR(tmax/dt) + 1
 
         ! call make_A_matrix(dt, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, ar, &
@@ -157,17 +168,21 @@ program chaleur
 
         ! print *, "b = ", b
 
+        err = 0._pr
+        do i = 1, nb_mailles
+            err = err + aire_maille(i)*Tnp1(i)**2
+        end do
+        print *, dt, err
+
+        T1 = 100206.22627769563 ; T2 = 93101.131276468441 ; T4 = 89882.428143689511
+
+        p = LOG((T1 - T2)/(T2 - T4))/LOG(2._pr)
+        print *, "p = ", p
+
     case default
         print *, "Il n'y a pas de schéma temporel associé à ce nombre ! A vous d'en implémenter un :)"
 
     end select
-
-    err = 0._pr
-    do i = 1, nb_mailles
-        err = err + aire_maille(i)*(Tnp1(i) - Sol_ex(milieu_maille(i, :)))**2
-    end do
-
-    print *, MAXVAL(l_arete), SQRT(err)
 
     deallocate(sommets_maille, cl_arete_bord, aire_maille, l_arete, d_arete &
     &          , noeud_maille, ar, trig, coord_noeud, milieu_arete, Tn, Tnp1)

@@ -313,9 +313,9 @@ module mod_maillage
 
 ! Teste les differents cotes de maille i
                     if (ai(1) == 0._pr .and. aj(1) == 0._pr) then           ! Bord gauche
-                        cl_arete_bord(i) = 10
+                        cl_arete_bord(i) = 20
                     else if (ai(1) == L .and. aj(1) == L) then              ! Bord droit
-                        cl_arete_bord(i) = 11
+                        cl_arete_bord(i) = 20
                     else if (ai(2) == 0._pr .and. aj(2) == 0._pr          & ! Bord bas
                     &       .or. ai(2) == H .and. aj(2) == H) then          ! Bord haut
                         cl_arete_bord(i) = 20

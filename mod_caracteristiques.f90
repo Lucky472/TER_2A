@@ -75,20 +75,20 @@ module mod_caracteristiques
 ! ----------------------------------------------------------------------------------------------
 ! Piece chauffee par un radiateur
 ! ----------------------------------------------------------------------------------------------
-! Epaisseur totale de la vitre
-            e = ea + 2*ev
+! ! Epaisseur totale de la vitre
+!             e = ea + 2*ev
 
-            if ((dm <= x1 .AND. x1 <= dm+eb) .AND. ((x2 <= hb) .OR. (1._pr - hb <= x2))) then
-! On est sur du beton
-                DXe = 1.03_pr
-            else if (((dm + eb - e <= x1 .AND. x1 <= dm + eb - e + ev) .OR. (dm + eb - ev <= x1  &
-            &         .AND. x1 <= dm + eb)) .AND. ((hb <= x2) .AND. (x2 <= hb + hv))) then
-! On est sur du verre
-                DXe = 0.93_pr
-            else
-! On est sur de l'air
-                DXe = 0.025_pr
-            end if
+!             if ((dm <= x1 .AND. x1 <= dm+eb) .AND. ((x2 <= hb) .OR. (1._pr - hb <= x2))) then
+! ! On est sur du beton
+!                 DXe = 1.03_pr
+!             else if (((dm + eb - e <= x1 .AND. x1 <= dm + eb - e + ev) .OR. (dm + eb - ev <= x1  &
+!             &         .AND. x1 <= dm + eb)) .AND. ((hb <= x2) .AND. (x2 <= hb + hv))) then
+! ! On est sur du verre
+!                 DXe = 0.93_pr
+!             else
+! ! On est sur de l'air
+!                 DXe = 0.025_pr
+!             end if
 
         end function D
 
@@ -117,46 +117,46 @@ module mod_caracteristiques
 ! ----------------------------------------------------------------------------------------------
 ! Piece chauffee par un radiateur
 ! ----------------------------------------------------------------------------------------------
-            e = ea + 2*ev
+!             e = ea + 2*ev
 
-            do i = 1, nb_mailles
-                x1 = milieu_maille(i, 1) ; x2 = milieu_maille(i, 2)
-                if (x1 <= dm) then
-! On est a l'exterieur
-                    TinitGi(i) = Text
-                else if (dm < x1 .AND. x1 <= dm + eb) then
-! On est au niveau du mur, on a quatre cas :
-!       On est dans le beton, on approxime par une temperature affine l'evolution de la temperature
-! dans le bloc
-!       On est a la hauteur de la vitre mais en dehors du double vitrage, on suppose que l'on est a
-! la temperature exterieure
-!       On est dans un des vitrages, on approxime par une temperature affine
-!       On est dans l'air entre les vitrages, on suppose que la temperature reste contante
-                    if (x2 < hb .OR. hb + hv < x2) then
-! On est dans le beton
-                        TinitGi(i) = (Tint - Text)/eb*(x1 - dm) + Text
-                    else if (hb <= x2 .AND. x2 <= hb + hv) then
-! Temperature moyenne entre l'exterieur et l'interieur, supposee presente dans l'air entre les vitrages
-                        Tm = (Tint + Text)/2
-                        if (x1 <= dm + eb - e) then
-! On est encore dans l'air libre
-                            TinitGi(i) = Text
-                        else if (dm + eb - e < x1 .AND. x1 < dm + eb - e + ev) then
-! On est sur le vitrage exterieur
-                            TinitGi(i) = (Tm - Text)/ev*(x1 - (dm + eb - e)) + Text
-                        else if (dm + eb - ev < x1 .AND. x1 < dm + eb) then
-! On est sur le vitrage interieur
-                            TinitGi(i) = (Tint - Tm)/ev*(x1 - (dm + eb - ev)) + Tm
-                        else if (dm + eb - e + ev <= x1 .AND. x1 <= dm + eb - ev) then
-! On est dans l'air entre les vitrages
-                            TinitGi(i) = Tm
-                        end if
-                    end if
-                else if (dm + eb < x1) then
-! On est a l'interieur
-                    TinitGi(i) = Tint
-                end if
-            end do
+!             do i = 1, nb_mailles
+!                 x1 = milieu_maille(i, 1) ; x2 = milieu_maille(i, 2)
+!                 if (x1 <= dm) then
+! ! On est a l'exterieur
+!                     TinitGi(i) = Text
+!                 else if (dm < x1 .AND. x1 <= dm + eb) then
+! ! On est au niveau du mur, on a quatre cas :
+! !       On est dans le beton, on approxime par une temperature affine l'evolution de la temperature
+! ! dans le bloc
+! !       On est a la hauteur de la vitre mais en dehors du double vitrage, on suppose que l'on est a
+! ! la temperature exterieure
+! !       On est dans un des vitrages, on approxime par une temperature affine
+! !       On est dans l'air entre les vitrages, on suppose que la temperature reste contante
+!                     if (x2 < hb .OR. hb + hv < x2) then
+! ! On est dans le beton
+!                         TinitGi(i) = (Tint - Text)/eb*(x1 - dm) + Text
+!                     else if (hb <= x2 .AND. x2 <= hb + hv) then
+! ! Temperature moyenne entre l'exterieur et l'interieur, supposee presente dans l'air entre les vitrages
+!                         Tm = (Tint + Text)/2
+!                         if (x1 <= dm + eb - e) then
+! ! On est encore dans l'air libre
+!                             TinitGi(i) = Text
+!                         else if (dm + eb - e < x1 .AND. x1 < dm + eb - e + ev) then
+! ! On est sur le vitrage exterieur
+!                             TinitGi(i) = (Tm - Text)/ev*(x1 - (dm + eb - e)) + Text
+!                         else if (dm + eb - ev < x1 .AND. x1 < dm + eb) then
+! ! On est sur le vitrage interieur
+!                             TinitGi(i) = (Tint - Tm)/ev*(x1 - (dm + eb - ev)) + Tm
+!                         else if (dm + eb - e + ev <= x1 .AND. x1 <= dm + eb - ev) then
+! ! On est dans l'air entre les vitrages
+!                             TinitGi(i) = Tm
+!                         end if
+!                     end if
+!                 else if (dm + eb < x1) then
+! ! On est a l'interieur
+!                     TinitGi(i) = Tint
+!                 end if
+!             end do
 
         end function Tinit
 
@@ -187,13 +187,13 @@ module mod_caracteristiques
 ! ----------------------------------------------------------------------------------------------
 ! Piece chauffee par un radiateur
 ! ----------------------------------------------------------------------------------------------
-            if (cl_arete_bord(e) == 10) then
-! On est sur le bord gauche
-                TbXe = Text
-            else if (cl_arete_bord(e) == 11) then
-! On est sur le bord droit
-                TbXe = Tint
-            end if
+!             if (cl_arete_bord(e) == 10) then
+! ! On est sur le bord gauche
+!                 TbXe = Text
+!             else if (cl_arete_bord(e) == 11) then
+! ! On est sur le bord droit
+!                 TbXe = Tint
+!             end if
 
         end function Dirichlet
 
@@ -246,16 +246,16 @@ module mod_caracteristiques
 ! Cas de la plaque chauffante circulaire
 ! ----------------------------------------------------------------------------------------------
 ! Rayon de la plaque chauffante
-!             r = 0.25_pr
-! ! Coordonees du centre de la plaque chauffante
-!             C = 0.5_pr
+            r = 0.25_pr
+! Coordonees du centre de la plaque chauffante
+            C = 0.5_pr
 
-!             x1 = milieu_maille(1, 1) ; x2 = milieu_maille(1, 2)
-!             if (((x1 - C(1))**2 + (x2 - C(2))**2) <= r**2) then
-!                 SGi = 1000._pr
-!             else
-!                 SGi = 0._pr
-!             end if
+            x1 = milieu_maille(1, 1) ; x2 = milieu_maille(1, 2)
+            if (((x1 - C(1))**2 + (x2 - C(2))**2) <= r**2) then
+                SGi = 1000._pr + 200._pr*SIN(2*pi*t)
+            else
+                SGi = 0._pr
+            end if
 
 ! ----------------------------------------------------------------------------------------------
 ! Cas manufacture
@@ -265,20 +265,20 @@ module mod_caracteristiques
 ! ----------------------------------------------------------------------------------------------
 ! Piece chauffee par un radiateur
 ! ----------------------------------------------------------------------------------------------
-            x1 = milieu_maille(1, 1) ; x2 = milieu_maille(1, 2)
+!             x1 = milieu_maille(1, 1) ; x2 = milieu_maille(1, 2)
 
-            if ((dm + eb + drad <= x1 .AND. x1 <= dm + eb + drad + Lrad) .AND. (Hsol <= x2      &
-            &    .AND. x2 <= Hrad)) then
-! On est bien dans la zone du radiateur
-                if (t<=trad) then
-! Le radiateur est en train d'emettre une source de chaleur
-                    SGi = 35._pr
-                else
-                    SGi = 0._pr
-                end if
-            else
-                SGi = 0._pr
-            end if
+!             if ((dm + eb + drad <= x1 .AND. x1 <= dm + eb + drad + Lrad) .AND. (Hsol <= x2      &
+!             &    .AND. x2 <= Hrad)) then
+! ! On est bien dans la zone du radiateur
+!                 if (t<=trad) then
+! ! Le radiateur est en train d'emettre une source de chaleur
+!                     SGi = 35._pr
+!                 else
+!                     SGi = 0._pr
+!                 end if
+!             else
+!                 SGi = 0._pr
+!             end if
 
         end function Terme_source
 
