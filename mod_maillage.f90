@@ -20,11 +20,13 @@ module mod_maillage
 
     contains
 
-        subroutine maillage(fichier, nb_mailles, nb_aretes, sommets_maille, S, P, aire_maille &
+        subroutine maillage(fichier, probleme, nb_mailles, nb_aretes, sommets_maille, S, P, aire_maille &
         &                   , l_arete, d_arete, milieu_arete, P_centre, ar, trig, cl_arete_bord)
 
 ! Fichier d'entree
             character(len = *), intent(in)                              :: fichier
+! Numero du probleme considere
+            integer, intent(in)                                         :: probleme
 
 ! Sorties de la subroutine :
 !       nb_mailles : nombre de mailles du maillage
@@ -117,7 +119,7 @@ module mod_maillage
             end do
 
 ! Condtions aux limites sur les aretes de bord
-            call cl_arete(P, e, trig, cl_arete_bord)
+            call cl_arete(probleme, P, e, trig, cl_arete_bord)
 
             deallocate(e)
 
@@ -279,9 +281,10 @@ module mod_maillage
         end subroutine barycentre
 
 
-        subroutine cl_arete(P, e, trig, cl_arete_bord)
+        subroutine cl_arete(probleme, P, e, trig, cl_arete_bord)
 
 ! Entrees de la subroutine
+            integer, intent(in)                                         :: probleme
             integer, dimension(:, :), intent(in)                        :: e, trig
             real(kind = pr), dimension(:, :), intent(in)                :: P
 
@@ -313,12 +316,22 @@ module mod_maillage
 
 ! Teste les differents cotes de maille i
                     if (ai(1) == 0._pr .and. aj(1) == 0._pr) then           ! Bord gauche
-                        cl_arete_bord(i) = 20
+                        if (1 <= probleme .AND. probleme <= 7) then
+                            cl_arete_bord(i) = 10
+                        end if
                     else if (ai(1) == L .and. aj(1) == L) then              ! Bord droit
-                        cl_arete_bord(i) = 20
+                        if (1 <= probleme .AND. probleme <= 7) then
+                            cl_arete_bord(i) = 11
+                        end if
                     else if (ai(2) == 0._pr .and. aj(2) == 0._pr          & ! Bord bas
                     &       .or. ai(2) == H .and. aj(2) == H) then          ! Bord haut
-                        cl_arete_bord(i) = 20
+                        if (1 <= probleme .AND. probleme <= 7 .AND.       &
+                    &      (probleme /= 3 .AND. probleme /= 6)) then        ! Condition de Neumann
+                            cl_arete_bord(i) = 20
+                        else if (1 <= probleme .AND. probleme <= 7 .AND.  &
+                    &           (probleme == 3 .OR. probleme == 6)) then   ! Condition de Dirichlet
+                            cl_arete_bord(i) = 11
+                        end if
                     end if
 
                 end if

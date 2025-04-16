@@ -10,7 +10,7 @@ program chaleur
 
     character(len = 50)                             :: fichier
 
-    integer                                         :: j, i, k, n, nplot, e, nb_mailles, nb_aretes, euler
+    integer                                         :: j, i, k, n, nplot, e, nb_mailles, nb_aretes, euler, probleme
     integer, dimension(:), allocatable              :: sommets_maille, cl_arete_bord, row_CSR, col_CSR
     integer, dimension(:, :), allocatable           :: noeud_maille, ar, trig
 
@@ -25,15 +25,31 @@ program chaleur
         read(10, *) fichier
     close(10)
 
+! ----------------------------------------------------------------------------------------------
+! Choix du probleme
+! ----------------------------------------------------------------------------------------------
+
+    print *, "----------------------------------------------------------"
+    print *, "Veuillez choisir le problème à résoudre :"
+    print *, "1) Cas test 1 : Cas 1D - Neumann homogène"
+    print *, "2) Cas test 2 : Flux entrant sur les bords Haut et Bas"
+    print *, "3) Cas test 3 : Plaque chauffante circulaire - Température constante"
+    print *, "4) Cas test 4 : Solution manufacturée"
+    print *, "5) Cas test 5 : Conditions aux limites (Neumann et Dirichlet) périodiques"
+    print *, "6) Plaque chauffante circulaire - Température altérée périodiquement"
+    print *, "7) Pièce chauffée par un radiateur"
+    print *, "----------------------------------------------------------"
+    read *, probleme
+
 ! Lecture du maillage
-    call maillage("TYP2/"//fichier, nb_mailles, nb_aretes, sommets_maille, noeud_maille, coord_noeud            &
+    call maillage("TYP2/"//fichier, probleme, nb_mailles, nb_aretes, sommets_maille, noeud_maille, coord_noeud            &
     &             , aire_maille, l_arete, d_arete, milieu_arete, milieu_maille, ar, trig, cl_arete_bord)
 
 
 ! Allocation des tableaux de temperature
     allocate(Tn(1:nb_mailles)) ; allocate(Tnp1(1:nb_mailles))
 ! Initialisation de Tnp1 et Tn
-    Tn = Tinit(milieu_maille)
+    Tn = Tinit(probleme, milieu_maille)
     Tnp1 = Tn
 
 ! Initialisation du temps
@@ -74,7 +90,7 @@ program chaleur
         end do
 
 ! Application du coefficient cfl sur dt
-        dt = cfl*dt/4
+        dt = cfl*dt
 
 ! Implementation du schema
         n = FLOOR(tmax/dt) + 1
@@ -87,16 +103,17 @@ program chaleur
                 if (k == 0) then
                     if ((10 <= cl_arete_bord(e)) .AND. (cl_arete_bord(e) <= 19)) then
 ! On est sur une arete de bord avec une condition de Dirichlet
-                        Fie = -D(milieu_arete(e, :))*(Dirichlet(e, cl_arete_bord, t, milieu_arete) - Tn(i))/d_arete(e)
+                        Fie = -D(probleme, milieu_arete(e, :))*                                         &
+                        & (Dirichlet(probleme, e, cl_arete_bord, t, milieu_arete) - Tn(i))/d_arete(e)
                         Tnp1(i) = Tnp1(i) - (dt/aire_maille(i))*l_arete(i)*Fie
                     else if ((20 <= cl_arete_bord(e) .AND. cl_arete_bord(e) <= 29)) then
 ! On est sur une arete de bord avec une condition de Neumann
-                        Fie = Neumann(e, cl_arete_bord, t, milieu_arete)
+                        Fie = Neumann(probleme, e, cl_arete_bord, t, milieu_arete)
                         Tnp1(i) = Tnp1(i) - (dt/aire_maille(i))*l_arete(i)*Fie
                     end if
 
                 else
-                    Fie = -D(milieu_arete(e, :))*(Tn(k) - Tn(i))/d_arete(e)
+                    Fie = -D(probleme, milieu_arete(e, :))*(Tn(k) - Tn(i))/d_arete(e)
                     Tnp1(i) = Tnp1(i) - (dt/aire_maille(i))*l_arete(e)*Fie
                     Tnp1(k) = Tnp1(k) + (dt/aire_maille(k))*l_arete(e)*Fie
 
@@ -105,13 +122,13 @@ program chaleur
 
 ! Ajout du terme source
             do i = 1, nb_mailles
-                Tnp1(i) = Tnp1(i) + dt*Terme_source(t, milieu_maille(i, :))
+                Tnp1(i) = Tnp1(i) + dt*Terme_source(probleme, t, milieu_maille(i, :))
             end do
 
             Tn = Tnp1
             t = t + dt
 
-            nplot = FLOOR(REAL(n)/100)
+            nplot = FLOOR(REAL(n)/10)
             if (j == 1 .or. MODULO(j, nplot) == 0) then
                 call sortie(j, Tn, sommets_maille, noeud_maille, coord_noeud)
             end if
@@ -134,7 +151,7 @@ program chaleur
 ! ----------------------------------------------------------------------------------------------
     case (2)
 
-        dt = 0.1_pr/4
+        dt = 0.1_pr
         n = FLOOR(tmax/dt) + 1
 
         ! call make_A_matrix(dt, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, ar, &
@@ -145,7 +162,7 @@ program chaleur
         !     print *, A(i, :)
         ! end do
 
-        call make_A_CSR(dt, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, ar,                    &
+        call make_A_CSR(probleme, dt, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, ar,                    &
         &               trig, cl_arete_bord, row_CSR, col_CSR, val_CSR)
 
         ! print *, "row_CSR", row_CSR
@@ -154,7 +171,7 @@ program chaleur
 
         do j = 1, n
             
-            call make_b(dt, t+dt, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, milieu_maille,   &
+            call make_b(probleme, dt, t+dt, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, milieu_maille,   &
             &           ar, trig, cl_arete_bord, Tn, b)
 
             call conjugate_gradient(row_CSR, col_CSR, val_CSR, Tn, b, Tnp1)
