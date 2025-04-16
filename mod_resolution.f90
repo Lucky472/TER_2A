@@ -18,11 +18,11 @@ module mod_resolution
     contains
 
 ! Subroutine a des fins de verification : creee la matrice A sous forme pleine
-        subroutine make_A_matrix(dt, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, ar,  &
+        subroutine make_A_matrix(probleme, dt, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, ar,  &
         &                        trig, cl_arete_bord, A)
 
 !
-            integer, intent(in)                                         :: nb_mailles
+            integer, intent(in)                                         :: probleme, nb_mailles
             integer, dimension(:), intent(in)                           :: cl_arete_bord
             integer, dimension(:, :), intent(in)                        :: ar, trig
             real(kind = pr), intent(in)                                 :: dt
@@ -48,15 +48,15 @@ module mod_resolution
                         k = trig(e(j), 2)
                         if (k == 0 .AND. (cl_arete_bord(e(j)) == 10 .OR. cl_arete_bord(e(j)) == 11)) then
 ! On est sur une arete de bord avec une condition de Dirichlet
-                            A(i, i) = A(i, i) + dt*(l_arete(e(j))/d_arete(e(j)))*D(milieu_arete(e(j), :))
+                            A(i, i) = A(i, i) + dt*(l_arete(e(j))/d_arete(e(j)))*D(probleme, milieu_arete(e(j), :))
                         else if (k == 0 .AND. cl_arete_bord(e(j)) == 20) then
 ! On est sur une arete de bord avec une condition de Neumann
                             A(i, i) = A(i, i)
                         else if (k /= 0) then
 ! On est sur une arete interieure
-                            A(i, i) = A(i, i) + dt*(l_arete(e(j))/d_arete(e(j)))*D(milieu_arete(e(j), :))
+                            A(i, i) = A(i, i) + dt*(l_arete(e(j))/d_arete(e(j)))*D(probleme, milieu_arete(e(j), :))
                             if (k /= i) then
-                                A(i, k) = A(i, k) - dt*(l_arete(e(j))/d_arete(e(j)))*D(milieu_arete(e(j), :))
+                                A(i, k) = A(i, k) - dt*(l_arete(e(j))/d_arete(e(j)))*D(probleme, milieu_arete(e(j), :))
                                 A(k, i) = A(i, k)
                             end if
                         end if
@@ -68,11 +68,11 @@ module mod_resolution
             
 
         
-        subroutine make_A_COO(dt, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, ar,  &
+        subroutine make_A_COO(probleme, dt, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, ar,  &
         &                     trig, cl_arete_bord, A_row, A_col, A_val)
 
 ! Entrees de la subroutine
-            integer, intent(in)                                         :: nb_mailles
+            integer, intent(in)                                         :: probleme, nb_mailles
             integer, dimension(:), intent(in)                           :: cl_arete_bord
             integer, dimension(:, :), intent(in)                        :: ar, trig
             real(kind = pr), intent(in)                                 :: dt
@@ -110,15 +110,15 @@ module mod_resolution
                         k = trig(e(j), 2)
                         if (k == 0 .AND. (10 <= cl_arete_bord(e(j))) .AND. (cl_arete_bord(e(j)) <= 19)) then
 ! On est sur une arete de bord avec une condition de Dirichlet
-                            Aii = Aii + dt*(l_arete(e(j))/d_arete(e(j)))*D(milieu_arete(e(j), :))
+                            Aii = Aii + dt*(l_arete(e(j))/d_arete(e(j)))*D(probleme, milieu_arete(e(j), :))
                         else if (k == 0 .AND. (20 <= cl_arete_bord(e(j))) .AND. (cl_arete_bord(e(j)) <= 29)) then
 ! On est sur une arete de bord avec une condition de Neumann
                             Aii = Aii
                         else if (k /= 0) then
 ! On est sur une arete interieure
-                            Aii = Aii + dt*(l_arete(e(j))/d_arete(e(j)))*D(milieu_arete(e(j), :))
+                            Aii = Aii + dt*(l_arete(e(j))/d_arete(e(j)))*D(probleme, milieu_arete(e(j), :))
                             if (k /= i) then
-                                Aik = Aik - dt*(l_arete(e(j))/d_arete(e(j)))*D(milieu_arete(e(j), :))
+                                Aik = Aik - dt*(l_arete(e(j))/d_arete(e(j)))*D(probleme, milieu_arete(e(j), :))
 ! Allocation pour A(i, k)
                                 call push_back_int(A_row, i) ; call push_back_int(A_col, k)
                                 call push_back_real(A_val, Aik)
@@ -137,11 +137,11 @@ module mod_resolution
         end subroutine make_A_COO
 
 
-        subroutine make_A_CSR(dt, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, ar,  &
+        subroutine make_A_CSR(probleme, dt, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, ar,  &
         &                     trig, cl_arete_bord, row_CSR, col_CSR, val_CSR)
 
 ! Entrees de la subroutine
-            integer, intent(in)                                         :: nb_mailles
+            integer, intent(in)                                         :: probleme, nb_mailles
             integer, dimension(:), intent(in)                           :: cl_arete_bord
             integer, dimension(:, :), intent(in)                        :: ar, trig
             real(kind = pr), intent(in)                                 :: dt
@@ -165,7 +165,7 @@ module mod_resolution
             integer, dimension(:), allocatable                          :: row_COO, col_COO, row_sorted, col_sorted
             real(kind = pr), dimension(:), allocatable                  :: val_COO, val_sorted
 
-            call make_A_COO(dt, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, ar,    &
+            call make_A_COO(probleme, dt, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, ar,    &
             &               trig, cl_arete_bord, row_COO, col_COO, val_COO)
         
             n = size(row_COO)
@@ -209,11 +209,11 @@ module mod_resolution
         end subroutine make_A_CSR
 
 
-        subroutine make_b(dt, t, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, milieu_maille,    &
+        subroutine make_b(probleme, dt, t, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, milieu_maille,    &
         &                 ar, trig, cl_arete_bord, Tn, b)
 
 ! Entrees de la subroutine
-        integer, intent(in)                                         :: nb_mailles
+        integer, intent(in)                                         :: probleme, nb_mailles
         integer, dimension(:), intent(in)                           :: cl_arete_bord
         integer, dimension(:, :), intent(in)                        :: ar, trig
         real(kind = pr), intent(in)                                 :: dt, t
@@ -241,15 +241,15 @@ module mod_resolution
                     k = trig(e(j), 2)
                     if (k == 0 .AND. (10 <= cl_arete_bord(e(j))) .AND. (cl_arete_bord(e(j)) <= 19)) then
 ! On est sur une arete de bord avec une condition de Dirichlet
-                        bi = bi + dt*(l_arete(e(j))/d_arete(e(j)))*D(milieu_arete(e(j), :))*    &
-                        &    Dirichlet(e(j), cl_arete_bord, t, milieu_arete)
+                        bi = bi + dt*(l_arete(e(j))/d_arete(e(j)))*D(probleme, milieu_arete(e(j), :))*    &
+                        &    Dirichlet(probleme, e(j), cl_arete_bord, t, milieu_arete(e(j), :))
                     else if (k == 0 .AND. (20 <= cl_arete_bord(e(j))) .AND. (cl_arete_bord(e(j)) <= 29)) then
 ! On est sur une arete de bord avec une condition de Neumann (ici Phih = Phib)
-                        bi = bi - dt*l_arete(e(j))*Neumann(e(j), cl_arete_bord, t, milieu_arete)
+                        bi = bi - dt*l_arete(e(j))*Neumann(probleme, e(j), cl_arete_bord, t, milieu_arete(e(j), :))
                     end if
                 end if
             end do
-            b(i) = bi + aire_maille(i)*Tn(i) + dt*aire_maille(i)*Terme_source(t, milieu_maille(i, :))
+            b(i) = bi + aire_maille(i)*Tn(i) + dt*aire_maille(i)*Terme_source(probleme, t, milieu_maille(i, :))
         end do
 
         end subroutine make_b

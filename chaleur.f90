@@ -10,13 +10,13 @@ program chaleur
 
     character(len = 50)                             :: fichier
 
-    integer                                         :: j, i, k, n, nplot, e, nb_mailles, nb_aretes, euler
+    integer                                         :: j, i, k, n, rep, nrep, nplot, e, nb_mailles, nb_aretes, euler, probleme
     integer, dimension(:), allocatable              :: sommets_maille, cl_arete_bord, row_CSR, col_CSR
     integer, dimension(:, :), allocatable           :: noeud_maille, ar, trig
 
-    real(kind = pr)                                 :: t, tmax, dt, sommeDt, Fie, x1, err, T1, T2, T4, p
+    real(kind = pr)                                 :: t, tmax, dt, sommeDt, Fie, err, T1, T2, T4, p, tol
     real(kind = pr), dimension(:), allocatable      :: aire_maille, l_arete, d_arete, Tn, Tnp1, val_CSR, b
-    real(kind = pr), dimension(:, :), allocatable   :: coord_noeud, milieu_arete, milieu_maille, A
+    real(kind = pr), dimension(:, :), allocatable   :: coord_noeud, milieu_arete, milieu_maille
 
 ! Lecture dans le fichier parameters.dat :
 !       fichier : Fichier contenant le maillage
@@ -25,19 +25,32 @@ program chaleur
         read(10, *) fichier
     close(10)
 
+! ----------------------------------------------------------------------------------------------
+! Choix du probleme
+! ----------------------------------------------------------------------------------------------
+
+    print *, "----------------------------------------------------------"
+    print *, "Veuillez choisir le problème à résoudre :"
+    print *, "1) Cas test 1 : Cas 1D - Neumann homogène"
+    print *, "2) Cas test 2 : Flux entrant sur les bords Haut et Bas"
+    print *, "3) Cas test 3 : Plaque chauffante circulaire - Température constante"
+    print *, "4) Cas test 4 : Solution manufacturée"
+    print *, "5) Cas test 5 : Conditions aux limites (Neumann et Dirichlet) périodiques"
+    print *, "6) Plaque chauffante circulaire - Température altérée périodiquement"
+    print *, "7) Pièce chauffée par un radiateur"
+    print *, "----------------------------------------------------------"
+    read *, probleme
+
 ! Lecture du maillage
-    call maillage("TYP2/"//fichier, nb_mailles, nb_aretes, sommets_maille, noeud_maille, coord_noeud            &
+    call maillage("TYP2/"//fichier, probleme, nb_mailles, nb_aretes, sommets_maille, noeud_maille, coord_noeud            &
     &             , aire_maille, l_arete, d_arete, milieu_arete, milieu_maille, ar, trig, cl_arete_bord)
 
 
 ! Allocation des tableaux de temperature
     allocate(Tn(1:nb_mailles)) ; allocate(Tnp1(1:nb_mailles))
-! Initialisation de Tnp1 et Tn
-    Tn = Tinit(milieu_maille)
-    Tnp1 = Tn
 
-! Initialisation du temps
-    t = 0._pr ; tmax = 1._pr
+! Initialisation du temps max
+    tmax = 1._pr
 
 ! ----------------------------------------------------------------------------------------------
 ! Choix du schema temporel
@@ -74,68 +87,95 @@ program chaleur
         end do
 
 ! Application du coefficient cfl sur dt
-        dt = cfl*dt/4
+        dt = cfl*dt
 
 ! Implementation du schema
-        n = FLOOR(tmax/dt) + 1
+        if (probleme == 4 .OR. probleme == 6) then
+            nrep = 3
+        else
+            nrep = 1
+        end if
 
-        do j = 1, n
+        do rep = 1, nrep
+! Initialisation de Tnp1 et Tn
+            Tn = Tinit(probleme, milieu_maille)
+            Tnp1 = Tn
+! Remise a zero du temps
+            t = 0._pr
+            n = FLOOR(tmax/dt) + 1
 
-            do e = 1 , nb_aretes
-                i = trig(e, 1) ; k = trig(e, 2)
+            do j = 1, n
 
-                if (k == 0) then
-                    if ((10 <= cl_arete_bord(e)) .AND. (cl_arete_bord(e) <= 19)) then
+                do e = 1 , nb_aretes
+                    i = trig(e, 1) ; k = trig(e, 2)
+
+                    if (k == 0) then
+                        if ((10 <= cl_arete_bord(e)) .AND. (cl_arete_bord(e) <= 19)) then
 ! On est sur une arete de bord avec une condition de Dirichlet
-                        Fie = -D(milieu_arete(e, :))*(Dirichlet(e, cl_arete_bord, t, milieu_arete) - Tn(i))/d_arete(e)
-                        Tnp1(i) = Tnp1(i) - (dt/aire_maille(i))*l_arete(i)*Fie
-                    else if ((20 <= cl_arete_bord(e) .AND. cl_arete_bord(e) <= 29)) then
+                            Fie = -D(probleme, milieu_arete(e, :))*                                         &
+                            & (Dirichlet(probleme, e, cl_arete_bord, t, milieu_arete(e, :)) - Tn(i))/d_arete(e)
+                            Tnp1(i) = Tnp1(i) - (dt/aire_maille(i))*l_arete(e)*Fie
+                        else if ((20 <= cl_arete_bord(e) .AND. cl_arete_bord(e) <= 29)) then
 ! On est sur une arete de bord avec une condition de Neumann
-                        Fie = Neumann(e, cl_arete_bord, t, milieu_arete)
-                        Tnp1(i) = Tnp1(i) - (dt/aire_maille(i))*l_arete(i)*Fie
+                            Fie = Neumann(probleme, e, cl_arete_bord, t, milieu_arete(e, :))
+                            Tnp1(i) = Tnp1(i) - (dt/aire_maille(i))*l_arete(e)*Fie
+                        end if
+
+                    else
+                        Fie = -D(probleme, milieu_arete(e, :))*(Tn(k) - Tn(i))/d_arete(e)
+                        Tnp1(i) = Tnp1(i) - (dt/aire_maille(i))*l_arete(e)*Fie
+                        Tnp1(k) = Tnp1(k) + (dt/aire_maille(k))*l_arete(e)*Fie
+
                     end if
-
-                else
-                    Fie = -D(milieu_arete(e, :))*(Tn(k) - Tn(i))/d_arete(e)
-                    Tnp1(i) = Tnp1(i) - (dt/aire_maille(i))*l_arete(e)*Fie
-                    Tnp1(k) = Tnp1(k) + (dt/aire_maille(k))*l_arete(e)*Fie
-
-                end if
-            end do
+                end do
 
 ! Ajout du terme source
-            do i = 1, nb_mailles
-                Tnp1(i) = Tnp1(i) + dt*Terme_source(t, milieu_maille(i, :))
+                do i = 1, nb_mailles
+                    Tnp1(i) = Tnp1(i) + dt*Terme_source(probleme, t, milieu_maille(i, :))
+                end do
+
+                Tn = Tnp1
+                t = t + dt
+
+                if (rep == 1) then
+! Pour eviter d'appeler sortie trop de fois pour rien
+                    nplot = FLOOR(REAL(n)/10)
+                    if (j == 1 .or. MODULO(j, nplot) == 0) then
+                        call sortie(j, Tn, sommets_maille, noeud_maille, coord_noeud)
+                    end if
+                end if
+
             end do
 
-            Tn = Tnp1
-            t = t + dt
+            if (probleme == 4 .OR. probleme == 6) then
+                err = 0._pr
+                do i = 1, nb_mailles
+                    err = err + aire_maille(i)*Tnp1(i)**2
+                end do
 
-            nplot = FLOOR(REAL(n)/100)
-            if (j == 1 .or. MODULO(j, nplot) == 0) then
-                call sortie(j, Tn, sommets_maille, noeud_maille, coord_noeud)
+                if (rep == 1) then
+                    T1 = err
+                else if (rep == 2) then
+                    T2 = err
+                else if (rep == 3) then
+                    T4 = err
+                end if
+                dt = dt/2
             end if
-
         end do
 
-        err = 0._pr
-        do i = 1, nb_mailles
-            err = err + aire_maille(i)*Tnp1(i)**2
-        end do
-        print *, dt, err
-
-        T1 = 86909.886556140744 ; T2 = 86902.085097817297 ; T4 = 86898.184500552641
-
-        p = LOG((T1 - T2)/(T2 - T4))/LOG(2._pr)
-        print *, "p = ", p
+        if (probleme == 4 .OR. probleme == 6) then
+            p = LOG((T1 - T2)/(T2 - T4))/LOG(2._pr)
+            print *, "p = ", p
+        end if
 
 ! ----------------------------------------------------------------------------------------------
 ! Euler Implicite
 ! ----------------------------------------------------------------------------------------------
     case (2)
 
-        dt = 0.1_pr/4
-        n = FLOOR(tmax/dt) + 1
+        dt = 0.05_pr
+        tol = 1e-10
 
         ! call make_A_matrix(dt, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, ar, &
         ! &                  trig, cl_arete_bord, A)
@@ -145,39 +185,66 @@ program chaleur
         !     print *, A(i, :)
         ! end do
 
-        call make_A_CSR(dt, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, ar,                    &
+        call make_A_CSR(probleme, dt, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, ar,                    &
         &               trig, cl_arete_bord, row_CSR, col_CSR, val_CSR)
 
         ! print *, "row_CSR", row_CSR
         ! print *, "col_CSR", col_CSR
         ! print *, "val_CSR", val_CSR
 
-        do j = 1, n
-            
-            call make_b(dt, t+dt, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, milieu_maille,   &
-            &           ar, trig, cl_arete_bord, Tn, b)
+! Pour obtenir le meme temps final que euler explicite dans le cas ou on a un tmax entier
+! Par exemple, sans ca, lorsque tmax = 1 et dt = 0.1, on effectuait 11 iterations et on avait
+! donc tfinal = 1.1 au lieu de 1
+        if (probleme == 4 .OR. probleme == 6) then
+            nrep = 3
+        else
+            nrep = 1
+        end if
 
-            call conjugate_gradient(row_CSR, col_CSR, val_CSR, Tn, b, Tnp1)
+        do rep = 1, nrep
+            if (ABS(tmax/dt - INT(tmax/dt)) < tol) then
+                n = FLOOR(tmax/dt)
+            else 
+                n = FLOOR(tmax/dt) + 1
+        
+            end if
+            do j = 1, n
+                
+                call make_b(probleme, dt, t+dt, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, milieu_maille,   &
+                &           ar, trig, cl_arete_bord, Tn, b)
 
-            Tn = Tnp1
-            t = t + dt
-            
-            call sortie(j, Tn, sommets_maille, noeud_maille, coord_noeud)
+                call conjugate_gradient(row_CSR, col_CSR, val_CSR, Tn, b, Tnp1)
 
+                Tn = Tnp1
+                t = t + dt
+                
+                if (rep == 1) then
+                    call sortie(j, Tn, sommets_maille, noeud_maille, coord_noeud)
+                end if
+
+            end do
+
+            if (probleme == 4 .OR. probleme == 6) then
+                err = 0._pr
+                do i = 1, nb_mailles
+                    err = err + aire_maille(i)*Tnp1(i)**2
+                end do
+
+                if (rep == 1) then
+                    T1 = err
+                else if (rep == 2) then
+                    T2 = err
+                else if (rep == 3) then
+                    T4 = err
+                end if
+                dt = dt/2
+            end if
         end do
 
-        ! print *, "b = ", b
-
-        err = 0._pr
-        do i = 1, nb_mailles
-            err = err + aire_maille(i)*Tnp1(i)**2
-        end do
-        print *, dt, err
-
-        T1 = 100206.22627769563 ; T2 = 93101.131276468441 ; T4 = 89882.428143689511
-
-        p = LOG((T1 - T2)/(T2 - T4))/LOG(2._pr)
-        print *, "p = ", p
+        if (probleme == 4 .OR. probleme == 6) then
+            p = LOG((T1 - T2)/(T2 - T4))/LOG(2._pr)
+            print *, "p = ", p
+        end if
 
     case default
         print *, "Il n'y a pas de schéma temporel associé à ce nombre ! A vous d'en implémenter un :)"
