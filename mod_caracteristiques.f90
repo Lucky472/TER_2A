@@ -7,6 +7,8 @@ module mod_caracteristiques
 !       D (Coefficient de diffusion)
 !       Dirichlet (Condition aux limites de Dirichlet)
 !       Neumann (Condition aux limites de Neumann)
+!       Heat_transfer_neumann (Condition au limite implicite de Neumann pour le coefficient
+! de transfert thermique h)
 !       Tinit (Temperature initiale dans la plaque)
 !       Terme_source
 !
@@ -23,7 +25,9 @@ module mod_caracteristiques
     real(kind = pr), parameter                                      :: L = 1._pr
     real(kind = pr), parameter                                      :: H = 1._pr
 
+! ----------------------------------------------------------------------------------------------
 ! Piece chauffee par un radiateur
+! ----------------------------------------------------------------------------------------------
 !       hb : Hauteur du bloc de beton
 !       hv : Hauteur de la vitre en verre (1 - 2*hb)
 !       eb : Epaisseur du bloc de beton
@@ -50,6 +54,14 @@ module mod_caracteristiques
     real(kind = pr), parameter                                      :: Hsol = 0.05_pr
     real(kind = pr), parameter                                      :: drad = 0.05_pr
     real(kind = pr), parameter                                      :: trad = 5_pr
+
+! ----------------------------------------------------------------------------------------------
+! Neumann - Coefficient de transfert thermique
+! ----------------------------------------------------------------------------------------------
+!       ht : Coefficient de transfert thermique (suppose constant ici)
+!       Tinf : Temperature loin de la plaque
+    real(kind = pr), parameter                                      :: ht = 10._pr
+    real(kind = pr), parameter                                      :: Tinf = 293._pr
 
     contains
 
@@ -94,6 +106,12 @@ module mod_caracteristiques
 ! On est sur de l'air
                     DXe = 0.025_pr
                 end if
+
+! ----------------------------------------------------------------------------------------------
+! Cas test 6
+! ----------------------------------------------------------------------------------------------
+            else if (probleme == 9) then
+                Dxe = 1._pr + 0.5_pr*SIN(2*pi*x1)*COS(2*pi*x2)
             end if
 
         end function D
@@ -168,6 +186,21 @@ module mod_caracteristiques
                         TinitGi(i) = Tint
                     end if
                 end do
+            
+! ----------------------------------------------------------------------------------------------
+! Plaque chauffante - Coefficient d'echange thermique
+! ----------------------------------------------------------------------------------------------
+            else if (probleme == 8) then
+                TinitGi = Tinf
+            
+! ----------------------------------------------------------------------------------------------
+! Cas test 6
+! ----------------------------------------------------------------------------------------------
+            else if (probleme == 9) then
+                do i = 1, nb_mailles
+                    x1 = milieu_maille(i, 1) ; x2 = milieu_maille(i, 2)
+                    TinitGi(i) = Tinf + 50._pr*SIN(pi/2*x1)*COS(pi/2*x2)
+                end do
             end if
 
         end function Tinit
@@ -184,6 +217,9 @@ module mod_caracteristiques
 ! Sortie de la fonction :
 !       TbXe : Temperature de bord evaluee au centre de l'arete e
             real(kind = pr)                                         :: TbXe
+
+! Variables locales
+            real(kind = pr)                                         :: x1, x2
 
 ! ----------------------------------------------------------------------------------------------
 ! Temperature de bord Tg et Td :
@@ -235,27 +271,43 @@ module mod_caracteristiques
 ! On est sur le bord droit
                     TbXe = Tint
                 end if
+
+! ----------------------------------------------------------------------------------------------
+! Cas test 6
+! ----------------------------------------------------------------------------------------------
+            else if (probleme == 9) then
+                x1 = milieu_arete(1, 1) ; x2 = milieu_arete(1, 2)
+                if (cl_arete_bord(e) == 10) then
+! On est sur le bord gauche
+                    TbXe = 250._pr + 20._pr*COS(pi*x1*x2)*SIN(2*pi*t)
+                else if (cl_arete_bord(e) == 11) then
+! On est sur le bord droit
+                    TbXe = 350._pr + 20._pr*SIN(pi*x1*x2)*COS(2*pi*t)
+                end if
             end if
 
         end function Dirichlet
 
 
-        function Neumann(probleme, e, cl_arete_bord, t, milieu_arete) result (PhibXe)
+        function Neumann(probleme, e, cl_arete_bord, t, milieu_arete, Ti) result (PhibXe)
 
 ! Entrees de la fonction
             integer, intent(in)                                     :: probleme, e
             integer, dimension(:), intent(in)                       :: cl_arete_bord
-            real(kind = pr), intent(in)                             :: t
+            real(kind = pr), intent(in)                             :: t, Ti
             real(kind = pr), dimension(1, 2), intent(in)            :: milieu_arete 
 
 ! Sortie de la fonction :
 !       PhibXe : Flux de bord evaluee au centre de l'arete e
             real(kind = pr)                                         :: PhibXe
 
+! Variables locales
+            real(kind = pr)                                         :: x1, x2
+
 ! ----------------------------------------------------------------------------------------------
 ! Neumann homogene :
 !       Cas tests 1, 4
-!       Piece chaufee par un radiateur
+!       Piece chauffee par un radiateur
 ! ----------------------------------------------------------------------------------------------
             if (probleme == 1 .OR. probleme == 4 .OR. probleme == 7) then
                 if (cl_arete_bord(e) == 20) then
@@ -282,12 +334,47 @@ module mod_caracteristiques
 ! On est sur le bord haut ou bas
                     PhibXe = -1000._pr*(1._pr + 1._pr/5*SIN(2*pi*t))
                 end if
-            
-            else if (probleme == 3 .OR. probleme == 6) then
-                PhibXe = 0._pr
+
+! ----------------------------------------------------------------------------------------------
+! Coefficient d'echange :
+!       Plaque chauffante circulaire
+! ----------------------------------------------------------------------------------------------
+            else if (probleme == 8) then
+                if (cl_arete_bord(e) == 20) then
+                    PhibXe = ht*(Ti - Tinf)
+                end if
+
+! ----------------------------------------------------------------------------------------------
+! Cas test 6
+! ----------------------------------------------------------------------------------------------
+            else if (probleme == 9) then
+                x1 = milieu_arete(1, 1) ; x2 = milieu_arete(1, 2)
+                if (cl_arete_bord(e) == 20) then
+                    PhibXe = 200._pr*SIN(2*pi*x1)*COS(2*pi*x2)*EXP(-0.1*t)
+                end if
             end if
 
         end function Neumann
+
+
+        function Heat_transfer_neumann(probleme, e, cl_arete_bord) result (PhibXe)
+
+! Entrees de la fonction
+            integer, intent(in)                                     :: probleme, e
+            integer, dimension(:), intent(in)                       :: cl_arete_bord
+
+! Sortie de la fonction :
+!       PhibXe : Equivalent du flux a ajouter au second membre dans le cas du schema d'Euler
+! Implicite
+            real(kind = pr)                                         :: PhibXe
+
+            if (probleme == 8) then
+                if (cl_arete_bord(e) == 20) then
+                    PhibXe = -ht*Tinf
+                end if
+            end if
+
+        end function Heat_transfer_neumann
 
 
         function Terme_source(probleme, t, milieu_maille) result(SGi)
@@ -304,10 +391,13 @@ module mod_caracteristiques
             real(kind = pr)                                         :: x1, x2, r
             real(kind = pr), dimension(1:2)                         :: C
 
+            if (probleme == 1 .OR. probleme == 2 .OR. probleme == 5) then
+                SGi = 0._pr
+
 ! ----------------------------------------------------------------------------------------------
 ! Cas de la plaque chauffante circulaire
 ! ----------------------------------------------------------------------------------------------
-            if (probleme == 3) then
+            else if (probleme == 3 .OR. probleme == 8) then
 ! Rayon de la plaque chauffante
                 r = 0.25_pr
 ! Coordonees du centre de la plaque chauffante
@@ -360,9 +450,13 @@ module mod_caracteristiques
                 else
                     SGi = 0._pr
                 end if
-            
-            else if (probleme == 1 .OR. probleme == 2 .OR. probleme == 5) then
-                SGi = 0._pr
+
+! ----------------------------------------------------------------------------------------------
+! Cas test 6
+! ----------------------------------------------------------------------------------------------
+            else if (probleme == 9) then
+                x1 = milieu_maille(1, 1) ; x2 = milieu_maille(1, 2)
+                SGi = 1000._pr*SIN(2*pi*x1)*COS(2*pi*x2)*SIN(0.1*pi*t)
             end if
 
         end function Terme_source

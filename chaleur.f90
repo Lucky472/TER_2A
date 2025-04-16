@@ -33,11 +33,13 @@ program chaleur
     print *, "Veuillez choisir le problème à résoudre :"
     print *, "1) Cas test 1 : Cas 1D - Neumann homogène"
     print *, "2) Cas test 2 : Flux entrant sur les bords Haut et Bas"
-    print *, "3) Cas test 3 : Plaque chauffante circulaire - Température constante"
+    print *, "3) Cas test 3 : Plaque chauffante circulaire - Température constante - CL de Dirichlet"
     print *, "4) Cas test 4 : Solution manufacturée"
     print *, "5) Cas test 5 : Conditions aux limites (Neumann et Dirichlet) périodiques"
-    print *, "6) Plaque chauffante circulaire - Température altérée périodiquement"
+    print *, "6) Plaque chauffante circulaire - Température altérée périodiquement - CL de Dirichlet"
     print *, "7) Pièce chauffée par un radiateur"
+    print *, "8) Plaque chauffante circulaire - Température constante - Coefficient d'échange"
+    print *, "9) Cas test 6 : Convergence en temps et en espace"
     print *, "----------------------------------------------------------"
     read *, probleme
 
@@ -90,7 +92,7 @@ program chaleur
         dt = cfl*dt
 
 ! Implementation du schema
-        if (probleme == 4 .OR. probleme == 6) then
+        if (probleme == 4 .OR. probleme == 6 .OR. probleme == 9) then
             nrep = 3
         else
             nrep = 1
@@ -117,7 +119,7 @@ program chaleur
                             Tnp1(i) = Tnp1(i) - (dt/aire_maille(i))*l_arete(e)*Fie
                         else if ((20 <= cl_arete_bord(e) .AND. cl_arete_bord(e) <= 29)) then
 ! On est sur une arete de bord avec une condition de Neumann
-                            Fie = Neumann(probleme, e, cl_arete_bord, t, milieu_arete(e, :))
+                            Fie = Neumann(probleme, e, cl_arete_bord, t, milieu_arete(e, :), Tn(i))
                             Tnp1(i) = Tnp1(i) - (dt/aire_maille(i))*l_arete(e)*Fie
                         end if
 
@@ -140,18 +142,19 @@ program chaleur
                 if (rep == 1) then
 ! Pour eviter d'appeler sortie trop de fois pour rien
                     nplot = FLOOR(REAL(n)/10)
-                    if (j == 1 .or. MODULO(j, nplot) == 0) then
+                    if (MODULO(j, nplot) == 0) then
                         call sortie(j, Tn, sommets_maille, noeud_maille, coord_noeud)
                     end if
                 end if
 
             end do
 
-            if (probleme == 4 .OR. probleme == 6) then
+            if (probleme == 4 .OR. probleme == 6 .OR. probleme == 9) then
                 err = 0._pr
                 do i = 1, nb_mailles
                     err = err + aire_maille(i)*Tnp1(i)**2
                 end do
+                print *, dt, err
 
                 if (rep == 1) then
                     T1 = err
@@ -164,7 +167,7 @@ program chaleur
             end if
         end do
 
-        if (probleme == 4 .OR. probleme == 6) then
+        if (probleme == 4 .OR. probleme == 6 .OR. probleme == 9) then
             p = LOG((T1 - T2)/(T2 - T4))/LOG(2._pr)
             print *, "p = ", p
         end if
@@ -192,16 +195,21 @@ program chaleur
         ! print *, "col_CSR", col_CSR
         ! print *, "val_CSR", val_CSR
 
-! Pour obtenir le meme temps final que euler explicite dans le cas ou on a un tmax entier
-! Par exemple, sans ca, lorsque tmax = 1 et dt = 0.1, on effectuait 11 iterations et on avait
-! donc tfinal = 1.1 au lieu de 1
-        if (probleme == 4 .OR. probleme == 6) then
+        if (probleme == 4 .OR. probleme == 6 .OR. probleme == 9) then
             nrep = 3
         else
             nrep = 1
         end if
 
         do rep = 1, nrep
+! Initialisation de Tnp1 et Tn
+            Tn = Tinit(probleme, milieu_maille)
+            Tnp1 = Tn
+! Remise a zero du temps
+            t = 0._pr
+! Pour obtenir le meme temps final que euler explicite dans le cas ou on a un tmax entier
+! Par exemple, sans ca, lorsque tmax = 1 et dt = 0.1, on effectuait 11 iterations et on avait
+! donc tfinal = 1.1 au lieu de 1
             if (ABS(tmax/dt - INT(tmax/dt)) < tol) then
                 n = FLOOR(tmax/dt)
             else 
@@ -224,7 +232,7 @@ program chaleur
 
             end do
 
-            if (probleme == 4 .OR. probleme == 6) then
+            if (probleme == 4 .OR. probleme == 6 .OR. probleme == 9) then
                 err = 0._pr
                 do i = 1, nb_mailles
                     err = err + aire_maille(i)*Tnp1(i)**2
@@ -241,7 +249,7 @@ program chaleur
             end if
         end do
 
-        if (probleme == 4 .OR. probleme == 6) then
+        if (probleme == 4 .OR. probleme == 6 .OR. probleme == 9) then
             p = LOG((T1 - T2)/(T2 - T4))/LOG(2._pr)
             print *, "p = ", p
         end if
