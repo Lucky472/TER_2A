@@ -22,8 +22,8 @@ module mod_caracteristiques
 ! Dimensions de la plaque :
 !       L : Longueur
 !       H : Hauteur/Largeur
-    real(kind = pr), parameter                                      :: L = 2._pr
-    real(kind = pr), parameter                                      :: H = 2._pr
+    real(kind = pr), parameter                                      :: L = 1._pr
+    real(kind = pr), parameter                                      :: H = 1._pr
 
 ! ----------------------------------------------------------------------------------------------
 ! Piece chauffee par un radiateur
@@ -350,7 +350,7 @@ module mod_caracteristiques
             else if (probleme == 9) then
                 x1 = milieu_arete(1, 1) ; x2 = milieu_arete(1, 2)
                 if (cl_arete_bord(e) == 20) then
-                    PhibXe = 200._pr*SIN(2*pi*x1)*COS(2*pi*x2)*EXP(-0.1*t)
+                    PhibXe = 100._pr*SIN(2*pi*x1)*COS(2*pi*x2)*EXP(-0.1*t)
                 end if
             end if
 

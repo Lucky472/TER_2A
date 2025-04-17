@@ -139,7 +139,7 @@ program chaleur
                 Tn = Tnp1
                 t = t + dt
 
-                if (rep == 1) then
+                if (rep == 3) then
 ! Pour eviter d'appeler sortie trop de fois pour rien
                     nplot = FLOOR(REAL(n)/10)
                     if (MODULO(j, nplot) == 0) then

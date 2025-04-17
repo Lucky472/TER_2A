@@ -179,7 +179,7 @@ module mod_maillage
                 do i = 1, nb_mailles
 ! Lit le nombre de sommets de la maille puis leur numero
                     read(10, *) sommets_maille(i), S(i, 1:sommets_maille(i))
-
+                    
                 end do
 
             else if (extension .EQ. ".vtk") then
@@ -264,6 +264,7 @@ module mod_maillage
 
             do i = 1, nb_mailles
                 read(10, *) sommets_maille(i), S(i, 1:sommets_maille(i))
+                S(i, 1:sommets_maille(i)) = S(i, 1:sommets_maille(i)) + 1
             end do
 
         end subroutine extraire_points_voronoi
