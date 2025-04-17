@@ -180,20 +180,8 @@ program chaleur
         dt = 0.05_pr
         tol = 1e-10
 
-        ! call make_A_matrix(dt, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, ar, &
-        ! &                  trig, cl_arete_bord, A)
-
-        ! print *, "A = "
-        ! do i = 1, 4
-        !     print *, A(i, :)
-        ! end do
-
         call make_A_CSR(probleme, dt, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, ar,                    &
         &               trig, cl_arete_bord, row_CSR, col_CSR, val_CSR)
-
-        ! print *, "row_CSR", row_CSR
-        ! print *, "col_CSR", col_CSR
-        ! print *, "val_CSR", val_CSR
 
         if (probleme == 4 .OR. probleme == 6 .OR. probleme == 9) then
             nrep = 3
@@ -254,12 +242,14 @@ program chaleur
             print *, "p = ", p
         end if
 
+        deallocate(row_CSR, col_CSR, val_CSR, b)
+
     case default
         print *, "Il n'y a pas de schéma temporel associé à ce nombre ! A vous d'en implémenter un :)"
 
     end select
 
-    deallocate(sommets_maille, cl_arete_bord, aire_maille, l_arete, d_arete &
+    deallocate(sommets_maille, cl_arete_bord, aire_maille, l_arete, d_arete     &
     &          , noeud_maille, ar, trig, coord_noeud, milieu_arete, Tn, Tnp1)
     
 end program chaleur

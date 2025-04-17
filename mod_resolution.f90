@@ -6,7 +6,6 @@ module mod_resolution
 
 ! ----------------------------------------------------------------------------------------------
 ! Module contenant les subroutines pour mod_resolution :
-!       make_A_matrix (temporaire, a des fins de verification)
 !       make_A_COO
 !       make_A_CSR
 !       make_b
@@ -16,58 +15,7 @@ module mod_resolution
     implicit none
 
     contains
-
-! Subroutine a des fins de verification : creee la matrice A sous forme pleine
-        subroutine make_A_matrix(probleme, dt, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, ar,  &
-        &                        trig, cl_arete_bord, A)
-
-!
-            integer, intent(in)                                         :: probleme, nb_mailles
-            integer, dimension(:), intent(in)                           :: cl_arete_bord
-            integer, dimension(:, :), intent(in)                        :: ar, trig
-            real(kind = pr), intent(in)                                 :: dt
-            real(kind = pr), dimension(:), intent(in)                   :: aire_maille, l_arete, d_arete
-            real(kind = pr), dimension(:, :), intent(in)                :: milieu_arete
-
-!
-            real(kind = pr), dimension(:, :), allocatable, intent(out)  :: A
-
-! Variables locales
-            integer :: i, j, k
-            integer, dimension(nb_max_sommets) :: e
             
-            allocate(A(1:nb_mailles, 1:nb_mailles))
-            
-            A = 0._pr
-
-            do i = 1, nb_mailles
-                A(i, i) = aire_maille(i)
-                e = ar(i, :)
-                do j = 1, nb_max_sommets
-                    if (e(j) /= 0) then
-                        k = trig(e(j), 2)
-                        if (k == 0 .AND. (cl_arete_bord(e(j)) == 10 .OR. cl_arete_bord(e(j)) == 11)) then
-! On est sur une arete de bord avec une condition de Dirichlet
-                            A(i, i) = A(i, i) + dt*(l_arete(e(j))/d_arete(e(j)))*D(probleme, milieu_arete(e(j), :))
-                        else if (k == 0 .AND. cl_arete_bord(e(j)) == 20) then
-! On est sur une arete de bord avec une condition de Neumann
-                            A(i, i) = A(i, i)
-                        else if (k /= 0) then
-! On est sur une arete interieure
-                            A(i, i) = A(i, i) + dt*(l_arete(e(j))/d_arete(e(j)))*D(probleme, milieu_arete(e(j), :))
-                            if (k /= i) then
-                                A(i, k) = A(i, k) - dt*(l_arete(e(j))/d_arete(e(j)))*D(probleme, milieu_arete(e(j), :))
-                                A(k, i) = A(i, k)
-                            end if
-                        end if
-                    end if   
-                end do
-            end do
-            
-        end subroutine make_A_matrix
-            
-
-        
         subroutine make_A_COO(probleme, dt, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, ar,  &
         &                     trig, cl_arete_bord, A_row, A_col, A_val)
 

@@ -12,6 +12,8 @@ module mod_maillage
 !       aire
 !       barycentre
 !       cl_arete
+!       extraire_nom_maillage
+!       extraire_points_voronoi
 ! Module inspire du module mod_maillage.f90 cree par Luc Mieussens :
 ! https://www.math.u-bordeaux.fr/~lmieusse/PAGE_WEB/ENSEIGNEMENT/MMK2/VF/TP/mod_maillage.f90
 ! ----------------------------------------------------------------------------------------------
@@ -34,7 +36,7 @@ module mod_maillage
 !       sommets_maille : Tableau tel que sommets_maille(i) = nombre de sommets de la maille i
 !       S : Tableau tel que S(i, 1:nb_max_sommets) soient les, au plus, nb_max_sommets sommets 
 ! de la maille i
-! Note : S(i, nb_max_sommets) = 0 lorsque la maille i n'a que (nb_max_somets - 1) sommets
+! Note : S(i, nb_max_sommets) = 0 lorsque la maille i n'a que (nb_max_sommets - 1) sommets
 !       P : Tableau tel que P(i, 1:2) soient les coordonnes du sommet i
 !       aire_maille : Tableau tel que aire_maille(i) = aire de la maille i
 !       l_arete : Tableau tel que l_arete(e) = longueur de l'arete e
@@ -141,35 +143,130 @@ module mod_maillage
             real(kind = pr), dimension(: ,:), allocatable, intent(out)  :: P
 
 ! Variables locales
+            character(len = 4)                                          :: extension
+            character(len = 255)                                        :: nom_maillage
             integer                                                     :: nb_noeuds, nb_mailles
-            integer                                                     :: i
+            integer                                                     :: i, len_nom_maillage
 
             open(unit = 10, file = trim(adjustl(fichier)))
-! Lit la premiere ligne et le nombre de sommets
-            read(10, *)
-            read(10, *) nb_noeuds
+            
+! Recupere le nom du maillage sans le chemin
+            call extraitre_nom_maillage(fichier, nom_maillage)
 
+! Recupere l'extension de nom_maillage
+            len_nom_maillage = len(trim(adjustl(nom_maillage)))
+            extension = nom_maillage(len_nom_maillage-3:len_nom_maillage)
+    
+            if (extension .EQ. "typ2") then
+! Lit la premiere ligne et le nombre de sommets
+                read(10, *)
+                read(10, *) nb_noeuds
+
+                allocate(P(1:nb_noeuds, 1:2))
+
+                do i = 1, nb_noeuds
+                    
+                    read(10, *) P(i, 1), P(i, 2)
+
+                end do
+
+! Lit "cells" puis lit le nombre de mailles
+                read(10, *)
+                read(10, *) nb_mailles
+
+                allocate(sommets_maille(1:nb_mailles)) ; allocate(S(1:nb_mailles, nb_max_sommets))
+
+                do i = 1, nb_mailles
+! Lit le nombre de sommets de la maille puis leur numero
+                    read(10, *) sommets_maille(i), S(i, 1:sommets_maille(i))
+
+                end do
+
+            else if (extension .EQ. ".vtk") then
+                call extraire_points_voronoi(nb_noeuds, sommets_maille, S, P)
+            end if
+
+        end subroutine lecture_maillage
+        
+
+        subroutine extraitre_nom_maillage(fichier, nom_maillage)
+
+! Entree de la subroutine
+            character(len = *), intent(in)                              :: fichier
+
+! Sortie de la subroutine
+!       nom_maillage : chaine de caractere contenant le nom du fichier de maillage sans le chemin
+            character(len = *), intent(out)                             :: nom_maillage
+
+! Variables locales
+            integer                                                     :: pos_chemin, i
+            
+            nom_maillage = " "
+            
+! Chercher la position du dernier /
+            pos_chemin = 0
+            do i = len(fichier), 1, -1
+                if (fichier(i:i) == '/') then
+                    pos_chemin = i
+                    exit
+                end if
+            end do
+            
+! Si un / est trouve, on extrait la portion apres le dernier /
+            if (pos_chemin > 0) then
+                nom_maillage = fichier(pos_chemin+1:)
+            else
+! Si aucun / n'est trouve, alors on a deja le nom du fichier
+                nom_maillage = fichier
+            end if
+            
+        end subroutine extraitre_nom_maillage
+            
+            
+        subroutine extraire_points_voronoi(nb_noeuds, sommets_maille, S, P)
+
+! Sorties de la subroutine :
+!       nb_noeuds : nombre de noeuds du maillage de Voronoi
+!       sommets_maille(1:nb_mailles) : nombre de sommets de la maille i
+!       S(1:nb_mailles, 1:nb_max_sommets) : numero des sommets_maille(i) sommets
+! et 0 pour le reste des sommets
+!       P(1:nb_noeuds, 1:2) : Tableau tel que P(i, :) = coordonnes du sommet i
+            integer, intent(out)                                        :: nb_noeuds
+            integer, dimension(:), allocatable, intent(out)             :: sommets_maille
+            integer, dimension(:, :), allocatable, intent(out)          :: S
+            real(kind = pr), dimension(:, :), allocatable, intent(out)  :: P
+
+! Variables locales
+            character(len = 100)                                        :: ligne
+            integer                                                     :: i, nb_mailles
+
+            do i = 1, 4
+                read(10, *)
+            end do
+
+! On est a la ligne contenant le nombre de sommets
+            read(10, "(A)") ligne
+            read (ligne(8:), *) nb_noeuds
+
+! Allocation et initialisation de P
             allocate(P(1:nb_noeuds, 1:2))
 
             do i = 1, nb_noeuds
-                
                 read(10, *) P(i, 1), P(i, 2)
-
             end do
 
-! Lit "cells" puis lit le nombre de mailles
-            read(10, *)
-            read(10, *) nb_mailles
+! On est a la ligne contenant le nombre de mailles
+            read(10, "(A)") ligne
+            read (ligne(10:), *) nb_mailles
 
+! Allocation de sommets_maille et S
             allocate(sommets_maille(1:nb_mailles)) ; allocate(S(1:nb_mailles, nb_max_sommets))
 
             do i = 1, nb_mailles
-! Lit le nombre de sommets de la maille puis leur numero
                 read(10, *) sommets_maille(i), S(i, 1:sommets_maille(i))
-
             end do
 
-        end subroutine lecture_maillage
+        end subroutine extraire_points_voronoi
 
 
         subroutine connectivite(sommets_maille, S, P, e, ar, trig)
@@ -341,5 +438,5 @@ module mod_maillage
             end do
 
         end subroutine cl_arete
-    
+
 end module mod_maillage

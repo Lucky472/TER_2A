@@ -22,8 +22,8 @@ module mod_caracteristiques
 ! Dimensions de la plaque :
 !       L : Longueur
 !       H : Hauteur/Largeur
-    real(kind = pr), parameter                                      :: L = 1._pr
-    real(kind = pr), parameter                                      :: H = 1._pr
+    real(kind = pr), parameter                                      :: L = 2._pr
+    real(kind = pr), parameter                                      :: H = 2._pr
 
 ! ----------------------------------------------------------------------------------------------
 ! Piece chauffee par un radiateur

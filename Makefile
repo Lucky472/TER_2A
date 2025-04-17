@@ -1,5 +1,5 @@
 F90=gfortran
-FFLAGS=-O2
+FFLAGS=-O0
 EXE=exec
 
 all : $(EXE)
