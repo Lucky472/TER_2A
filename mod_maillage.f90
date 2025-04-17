@@ -316,20 +316,22 @@ module mod_maillage
 
 ! Teste les differents cotes de maille i
                     if (ai(1) == 0._pr .and. aj(1) == 0._pr) then           ! Bord gauche
-                        if (1 <= probleme .AND. probleme <= 7) then
+                        if (1 <= probleme .AND. probleme <= 7 .OR. probleme == 9) then
                             cl_arete_bord(i) = 10
+                        else if (probleme == 8) then
+                            cl_arete_bord(i) = 20
                         end if
                     else if (ai(1) == L .and. aj(1) == L) then              ! Bord droit
-                        if (1 <= probleme .AND. probleme <= 7) then
+                        if (1 <= probleme .AND. probleme <= 7 .OR. probleme == 9) then
                             cl_arete_bord(i) = 11
+                        else if (probleme == 8) then
+                            cl_arete_bord(i) = 20
                         end if
                     else if (ai(2) == 0._pr .and. aj(2) == 0._pr          & ! Bord bas
                     &       .or. ai(2) == H .and. aj(2) == H) then          ! Bord haut
-                        if (1 <= probleme .AND. probleme <= 7 .AND.       &
-                    &      (probleme /= 3 .AND. probleme /= 6)) then        ! Condition de Neumann
+                        if (probleme /= 3 .AND. probleme /= 6) then         ! Condition de Neumann
                             cl_arete_bord(i) = 20
-                        else if (1 <= probleme .AND. probleme <= 7 .AND.  &
-                    &           (probleme == 3 .OR. probleme == 6)) then   ! Condition de Dirichlet
+                        else if (probleme /= 3 .AND. probleme /= 6) then    ! Condition de Dirichlet
                             cl_arete_bord(i) = 11
                         end if
                     end if
