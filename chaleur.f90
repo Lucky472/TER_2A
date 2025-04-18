@@ -47,7 +47,6 @@ program chaleur
     call maillage("TYP2/"//fichier, probleme, nb_mailles, nb_aretes, sommets_maille, noeud_maille, coord_noeud            &
     &             , aire_maille, l_arete, d_arete, milieu_arete, milieu_maille, ar, trig, cl_arete_bord)
 
-
 ! Allocation des tableaux de temperature
     allocate(Tn(1:nb_mailles)) ; allocate(Tnp1(1:nb_mailles))
 
@@ -139,7 +138,7 @@ program chaleur
                 Tn = Tnp1
                 t = t + dt
 
-                if (rep == 3) then
+                if (rep == 1) then
 ! Pour eviter d'appeler sortie trop de fois pour rien
                     nplot = FLOOR(REAL(n)/10)
                     if (MODULO(j, nplot) == 0) then
