@@ -416,13 +416,13 @@ module mod_maillage
                     if (ai(1) == 0._pr .and. aj(1) == 0._pr) then           ! Bord gauche
                         if (1 <= probleme .AND. probleme <= 7 .OR. probleme == 9) then
                             cl_arete_bord(i) = 10
-                        else if (probleme == 8) then
+                        else if (probleme == 8 .OR. probleme == 10) then
                             cl_arete_bord(i) = 20
                         end if
                     else if (ai(1) == L .and. aj(1) == L) then              ! Bord droit
                         if (1 <= probleme .AND. probleme <= 7 .OR. probleme == 9) then
                             cl_arete_bord(i) = 11
-                        else if (probleme == 8) then
+                        else if (probleme == 8 .OR. probleme == 10) then
                             cl_arete_bord(i) = 20
                         end if
                     else if (ai(2) == 0._pr .and. aj(2) == 0._pr          & ! Bord bas

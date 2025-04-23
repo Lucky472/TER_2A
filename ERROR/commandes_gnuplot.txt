@@ -1,6 +1,6 @@
 set logscale xy
 
-file = "err_EI_delau.dat"
+file = "err_EI_cart.dat"
 
 mc(x) = a*x+b
 fit mc(x) file using (log($1)):(log($2)) via a,b

@@ -64,7 +64,7 @@ module mod_resolution
                             if (1 <= probleme .AND. probleme <= 7) then
 ! On a une condition de Neumann "classique"
                                 Aii = Aii
-                            else if (probleme == 8) then
+                            else if (probleme == 8 .OR. probleme == 10) then
 ! On a une condition de Neumann de la forme h(T - Tinf)
                                 Aii = Aii + dt*l_arete(e(j))*ht
                             end if
@@ -202,7 +202,7 @@ module mod_resolution
                         if (1 <= probleme .AND. probleme <= 7) then
 ! On a une condition de Neumann "classique"
                             bi = bi - dt*l_arete(e(j))*Neumann(probleme, e(j), cl_arete_bord, t, milieu_arete(e(j), :), Tn(i))
-                        else if (probleme == 8) then
+                        else if (probleme == 8 .OR. probleme == 10) then
 ! On a une condtion de Neumann de la forme h(T - Tinf)
                             bi = bi - dt*l_arete(e(j))*Heat_transfer_neumann(probleme, e(j), cl_arete_bord)
                         end if

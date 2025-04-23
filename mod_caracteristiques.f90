@@ -85,7 +85,7 @@ module mod_caracteristiques
 !       Cas tests 1, 2, 3, 4, 5
 !       Plaque chauffante periodique
 ! ----------------------------------------------------------------------------------------------
-            if (1 <= probleme .AND. probleme <= 6) then
+            if (1 <= probleme .AND. probleme <= 6 .OR. probleme == 8 .OR. probleme == 10) then
                 DXe = 1._pr
 
 ! ----------------------------------------------------------------------------------------------
@@ -190,7 +190,7 @@ module mod_caracteristiques
 ! ----------------------------------------------------------------------------------------------
 ! Plaque chauffante - Coefficient d'echange thermique
 ! ----------------------------------------------------------------------------------------------
-            else if (probleme == 8) then
+            else if (probleme == 8 .OR. probleme == 10) then
                 TinitGi = Tinf
             
 ! ----------------------------------------------------------------------------------------------
@@ -244,7 +244,7 @@ module mod_caracteristiques
                     TbXe = 100._pr
                 else if (cl_arete_bord(e) == 11) then
 ! On est sur le bord droit, haut et bas
-                    TbXe = 100._pr
+                    TbXe = 300._pr
                 end if
 
 ! ----------------------------------------------------------------------------------------------
@@ -339,7 +339,7 @@ module mod_caracteristiques
 ! Coefficient d'echange :
 !       Plaque chauffante circulaire
 ! ----------------------------------------------------------------------------------------------
-            else if (probleme == 8) then
+            else if (probleme == 8 .OR. probleme == 10) then
                 if (cl_arete_bord(e) == 20) then
                     PhibXe = ht*(Ti - Tinf)
                 end if
@@ -368,7 +368,7 @@ module mod_caracteristiques
 ! Implicite
             real(kind = pr)                                         :: PhibXe
 
-            if (probleme == 8) then
+            if (probleme == 8 .OR. probleme == 10) then
                 if (cl_arete_bord(e) == 20) then
                     PhibXe = -ht*Tinf
                 end if
@@ -457,6 +457,22 @@ module mod_caracteristiques
             else if (probleme == 9) then
                 x1 = milieu_maille(1, 1) ; x2 = milieu_maille(1, 2)
                 SGi = 1000._pr*SIN(2*pi*x1)*COS(2*pi*x2)*SIN(0.1*pi*t)
+
+! ----------------------------------------------------------------------------------------------
+! Plaque chauffante periodique
+! ----------------------------------------------------------------------------------------------
+            else if (probleme == 10) then
+! Rayon de la plaque chauffante
+                r = 0.25_pr
+! Coordonees du centre de la plaque chauffante
+                C = 0.5_pr
+
+                x1 = milieu_maille(1, 1) ; x2 = milieu_maille(1, 2)
+                if (((x1 - C(1))**2 + (x2 - C(2))**2) <= r**2) then
+                    SGi = 1000._pr*(1._pr + 1._pr/5*SIN(pi/2*t) + 1._pr/20*SIN(100*pi*t))
+                else
+                    SGi = 0._pr
+                end if 
             end if
 
         end function Terme_source
@@ -472,7 +488,7 @@ module mod_caracteristiques
 ! Variables locales
             real(kind = pr)                                         :: x1, x2, S, D, Tg, Td
 
-            S = 1000._pr ; D = 1._pr ; Tg = 100._pr ; Td = 100._pr
+            S = 1000._pr ; D = 1._pr ; Tg = 100._pr ; Td = 300._pr
 
             x1 = milieu_maille(1, 1) ; x2 = milieu_maille(1, 2)
             Tex = -S/(2*D)*x1**2 + (Td - Tg + S/(2*D))*x1 + Tg

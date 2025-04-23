@@ -39,7 +39,8 @@ program chaleur
     print *, "6) Plaque chauffante circulaire - Température altérée périodiquement - CL de Dirichlet"
     print *, "7) Pièce chauffée par un radiateur"
     print *, "8) Plaque chauffante circulaire - Température constante - Coefficient d'échange"
-    print *, "9) Cas test 6 : Convergence en temps et en espace"
+    print *, "9) Cas test 6 : Robustesse du code"
+    print *, "10) Plaque chauffante circulaire - Température altérée périodiquement - Coefficient d'échange"
     print *, "----------------------------------------------------------"
     read *, probleme
 
@@ -78,7 +79,7 @@ program chaleur
 
 ! Calcul du denominateur de la condition CFL
             do e = 1, sommets_maille(i)
-                sommeDt = sommeDt + (l_arete(ar(i, e)))*(1._pr/d_arete(ar(i, e)))
+                sommeDt = sommeDt + (l_arete(ar(i, e)))*(D(probleme, milieu_arete(ar(i, e), :))/d_arete(ar(i, e)))
             end do
 
             if (1._pr/dt <= (sommeDt/aire_maille(i))) then
@@ -91,7 +92,7 @@ program chaleur
         dt = cfl*dt
 
 ! Implementation du schema
-        if (probleme == 4 .OR. probleme == 6 .OR. probleme == 9) then
+        if (probleme == 6 .OR. probleme == 9 .OR. probleme == 10) then
             nrep = 3
         else
             nrep = 1
@@ -148,7 +149,7 @@ program chaleur
 
             end do
 
-            if (probleme == 4 .OR. probleme == 6 .OR. probleme == 9) then
+            if (probleme == 6 .OR. probleme == 9 .OR. probleme == 10) then
                 err = 0._pr
                 do i = 1, nb_mailles
                     err = err + aire_maille(i)*Tnp1(i)**2
@@ -156,17 +157,27 @@ program chaleur
                 print *, dt, err
 
                 if (rep == 1) then
-                    T1 = err
+                    T1 = SQRT(err)
                 else if (rep == 2) then
-                    T2 = err
+                    T2 = SQRT(err)
                 else if (rep == 3) then
-                    T4 = err
+                    T4 = SQRT(err)
                 end if
                 dt = dt/2
             end if
         end do
 
-        if (probleme == 4 .OR. probleme == 6 .OR. probleme == 9) then
+! Convergence en ordre spatial
+        if (probleme == 4) then
+            err = 0._pr
+            do i = 1, nb_mailles
+                err = err + aire_maille(i)*(Tnp1(i) - Sol_ex(milieu_maille(i, :)))**2
+            end do
+            print *, MAXVAL(l_arete), SQRT(err)
+        end if
+
+! Convergence en ordre temporel
+        if (probleme == 6 .OR. probleme == 9 .OR. probleme == 10) then
             p = LOG((T1 - T2)/(T2 - T4))/LOG(2._pr)
             print *, "p = ", p
         end if
@@ -182,7 +193,7 @@ program chaleur
         call make_A_CSR(probleme, dt, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, ar,                    &
         &               trig, cl_arete_bord, row_CSR, col_CSR, val_CSR)
 
-        if (probleme == 4 .OR. probleme == 6 .OR. probleme == 9) then
+        if (probleme == 6 .OR. probleme == 9 .OR. probleme == 10) then
             nrep = 3
         else
             nrep = 1
@@ -219,24 +230,34 @@ program chaleur
 
             end do
 
-            if (probleme == 4 .OR. probleme == 6 .OR. probleme == 9) then
+            if (probleme == 6 .OR. probleme == 9 .OR. probleme == 10) then
                 err = 0._pr
                 do i = 1, nb_mailles
                     err = err + aire_maille(i)*Tnp1(i)**2
                 end do
 
                 if (rep == 1) then
-                    T1 = err
+                    T1 = SQRT(err)
                 else if (rep == 2) then
-                    T2 = err
+                    T2 = SQRT(err)
                 else if (rep == 3) then
-                    T4 = err
+                    T4 = SQRT(err)
                 end if
                 dt = dt/2
             end if
         end do
 
-        if (probleme == 4 .OR. probleme == 6 .OR. probleme == 9) then
+! Convergence en ordre spatial
+        if (probleme == 4) then
+            err = 0._pr
+            do i = 1, nb_mailles
+                err = err + aire_maille(i)*ABS(Tnp1(i) - Sol_ex(milieu_maille(i, :)))**2
+            end do
+            print *, MAXVAL(l_arete), SQRT(err)
+        end if
+
+! Convergence en ordre temporel
+        if (probleme == 6 .OR. probleme == 9 .OR. probleme == 10) then
             p = LOG((T1 - T2)/(T2 - T4))/LOG(2._pr)
             print *, "p = ", p
         end if
