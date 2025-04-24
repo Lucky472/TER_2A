@@ -347,13 +347,14 @@ module mod_maillage
 
 ! Sortie de la subroutine :
 !       barycentre_maille : Tableau tel que barycentre_maille(i, 1:2) = barycentre de
-! la maille i
+! la maille i, sauf si on est sur un triangle, alors barycentre_maille(i, 1:2) = 
+! coordonnes du circumcentre
             real(kind = pr), dimension(:, :), allocatable, intent(out)  :: barycentre_maille
 
 ! Variables locales
-            integer                                                     :: k, l, ni, nj, nb_trig
+            integer                                                     :: k, l, ni, nj, nk, nb_trig
             real(kind = pr)                                             :: sommeXnum, sommeYnum, sommeDeno
-            real(kind = pr), dimension(2)                               :: ai, aj
+            real(kind = pr), dimension(2)                               :: ai, aj, ak
 
             nb_trig = size(S, 1)
 
@@ -364,12 +365,22 @@ module mod_maillage
                 do l = 1, sommets_maille(k)
 
                     call get_Si1_back(k, l, sommets_maille, S, ni, nj)
-
                     ai = P(ni, :) ; aj = P(nj, :)
 
-                    sommeXnum = sommeXnum + (ai(1) + aj(1))*((ai(1)*aj(2)) - (ai(2)*aj(1)))
-                    sommeYnum = sommeYnum + (ai(2) + aj(2))*((ai(1)*aj(2)) - (ai(2)*aj(1)))
-                    sommeDeno = sommeDeno + 3._pr*((ai(1)*aj(2)) - (ai(2)*aj(1)))
+                    if (sommets_maille(k) == 3) then
+! On est sur une maille triangulaire
+                        call get_Si1_back(k, l+1, sommets_maille, S, nj, nk)
+                        ak = P(nk, :)
+
+                        sommeXnum = sommeXnum + (ai(1)**2 + ai(2)**2)*(aj(2) - ak(2))
+                        sommeYnum = sommeYnum + (ai(1)**2 + ai(2)**2)*(ak(1) - aj(1))
+                        sommeDeno = sommeDeno + 2._pr*ai(1)*(aj(2) - ak(2))
+                    else
+! On est sur une maille polygonale
+                        sommeXnum = sommeXnum + (ai(1) + aj(1))*((ai(1)*aj(2)) - (ai(2)*aj(1)))
+                        sommeYnum = sommeYnum + (ai(2) + aj(2))*((ai(1)*aj(2)) - (ai(2)*aj(1)))
+                        sommeDeno = sommeDeno + 3._pr*((ai(1)*aj(2)) - (ai(2)*aj(1)))
+                    end if
 
                 end do
                 barycentre_maille(k, 1) = sommeXnum/sommeDeno

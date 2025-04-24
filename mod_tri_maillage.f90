@@ -29,10 +29,12 @@ module mod_tri_maillage
 ! Retourne nj = S(k, 1) si l = sommets_maille(k)
             integer, intent(out)                                :: ni, nj
 
-            if (l /= sommets_maille(k)) then
+            if (l < sommets_maille(k)) then
                 ni = S(k, l); nj = S(k, l+1)
-            else
+            else if (l == sommets_maille(k)) then
                 ni = S(k, l); nj = S(k, 1)
+            else if (l == sommets_maille(k)+1) then
+                ni = S(k, 1); nj = S(k, 2)
             end if
 
         end subroutine get_Si1_back
