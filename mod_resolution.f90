@@ -137,14 +137,12 @@ module mod_resolution
 
             row_CSR = 0 ; unique_count = 0
         
-! Construction de col_CSR et val_CSR en évitant les doublons
             do i = 1, n
                 if (i == 1 .OR. row_sorted(i) /= row_sorted(i-1) .OR. col_sorted(i) /= col_sorted(i-1)) then
                     unique_count = unique_count + 1
                     col_CSR(unique_count) = col_sorted(i)
                     val_CSR(unique_count) = val_sorted(i)
                 else
-! Somme des valeurs en cas de doublon
                     val_CSR(unique_count) = val_CSR(unique_count) + val_sorted(i)
                 end if
             end do

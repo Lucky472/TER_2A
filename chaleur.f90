@@ -14,8 +14,8 @@ program chaleur
     integer, dimension(:), allocatable              :: sommets_maille, cl_arete_bord, row_CSR, col_CSR
     integer, dimension(:, :), allocatable           :: noeud_maille, ar, trig
 
-    real(kind = pr)                                 :: t, tmax, dt, sommeDt, Fie, err, T1, T2, T4, p, tol
-    real(kind = pr), dimension(:), allocatable      :: aire_maille, l_arete, d_arete, Tn, Tnp1, val_CSR, b
+    real(kind = pr)                                 :: t, tmax, dt, sommeDt, Fie, err, err1, err2, p, tol
+    real(kind = pr), dimension(:), allocatable      :: aire_maille, l_arete, d_arete, Tn, Tnp1, val_CSR, b, T1, T2, T4
     real(kind = pr), dimension(:, :), allocatable   :: coord_noeud, milieu_arete, milieu_maille
 
 ! Lecture dans le fichier parameters.dat :
@@ -150,18 +150,15 @@ program chaleur
             end do
 
             if (probleme == 6 .OR. probleme == 9 .OR. probleme == 10) then
-                err = 0._pr
-                do i = 1, nb_mailles
-                    err = err + aire_maille(i)*Tnp1(i)**2
-                end do
-                print *, dt, err
-
                 if (rep == 1) then
-                    T1 = SQRT(err)
+                    allocate(T1(1:nb_mailles))
+                    T1 = Tnp1
                 else if (rep == 2) then
-                    T2 = SQRT(err)
+                    allocate(T2(1:nb_mailles))
+                    T2 = Tnp1
                 else if (rep == 3) then
-                    T4 = SQRT(err)
+                    allocate(T4(1:nb_mailles))
+                    T4 = Tnp1
                 end if
                 dt = dt/2
             end if
@@ -178,8 +175,14 @@ program chaleur
 
 ! Convergence en ordre temporel
         if (probleme == 6 .OR. probleme == 9 .OR. probleme == 10) then
-            p = LOG((T1 - T2)/(T2 - T4))/LOG(2._pr)
+            err1 = 0._pr ; err2 = 0._pr
+            do i = 1, nb_mailles
+                err1 = err1 + aire_maille(i)*(T1(i) - T2(i))**2
+                err2 = err2 + aire_maille(i)*(T2(i) - T4(i))**2
+            end do
+            p = LOG(SQRT(err1)/SQRT(err2))/LOG(2._pr)
             print *, "p = ", p
+            deallocate(T1, T2, T4)
         end if
 
 ! ----------------------------------------------------------------------------------------------
@@ -231,17 +234,15 @@ program chaleur
             end do
 
             if (probleme == 6 .OR. probleme == 9 .OR. probleme == 10) then
-                err = 0._pr
-                do i = 1, nb_mailles
-                    err = err + aire_maille(i)*Tnp1(i)**2
-                end do
-
                 if (rep == 1) then
-                    T1 = SQRT(err)
+                    allocate(T1(1:nb_mailles))
+                    T1 = Tnp1
                 else if (rep == 2) then
-                    T2 = SQRT(err)
+                    allocate(T2(1:nb_mailles))
+                    T2 = Tnp1
                 else if (rep == 3) then
-                    T4 = SQRT(err)
+                    allocate(T4(1:nb_mailles))
+                    T4 = Tnp1
                 end if
                 dt = dt/2
             end if
@@ -258,8 +259,14 @@ program chaleur
 
 ! Convergence en ordre temporel
         if (probleme == 6 .OR. probleme == 9 .OR. probleme == 10) then
-            p = LOG((T1 - T2)/(T2 - T4))/LOG(2._pr)
+            err1 = 0._pr ; err2 = 0._pr
+            do i = 1, nb_mailles
+                err1 = err1 + aire_maille(i)*(T1(i) - T2(i))**2
+                err2 = err2 + aire_maille(i)*(T2(i) - T4(i))**2
+            end do
+            p = LOG(SQRT(err1)/SQRT(err2))/LOG(2._pr)
             print *, "p = ", p
+            deallocate(T1, T2, T4)
         end if
 
         deallocate(row_CSR, col_CSR, val_CSR, b)
