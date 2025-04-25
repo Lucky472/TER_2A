@@ -141,7 +141,7 @@ program chaleur
 
                 if (rep == 1) then
 ! Pour eviter d'appeler sortie trop de fois pour rien
-                    nplot = FLOOR(REAL(n)/10)
+                    nplot = FLOOR(REAL(n)/100)
                     if (MODULO(j, nplot) == 0) then
                         call sortie(j, Tn, sommets_maille, noeud_maille, coord_noeud)
                     end if

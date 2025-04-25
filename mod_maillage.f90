@@ -240,7 +240,8 @@ module mod_maillage
             character(len = 100)                                        :: ligne
             integer                                                     :: i, nb_mailles
 
-            do i = 1, 4
+! On lit les 4 premires lignes puis le saut de ligne
+            do i = 1, 5
                 read(10, *)
             end do
 
@@ -254,6 +255,9 @@ module mod_maillage
             do i = 1, nb_noeuds
                 read(10, *) P(i, 1), P(i, 2)
             end do
+
+! On lit le saut de ligne
+            read(10, *)
 
 ! On est a la ligne contenant le nombre de mailles
             read(10, "(A)") ligne
@@ -409,8 +413,10 @@ module mod_maillage
 
 ! Variables locales
             integer                                                     :: i, nb_aretes, ni, nj
+            real(kind = pr)                                             :: tol
             real(kind = pr), dimension(2)                               :: ai, aj
 
+            tol = 1e-13_pr
             nb_aretes = size(e, 1)
 
             allocate(cl_arete_bord(1:nb_aretes))
@@ -424,23 +430,23 @@ module mod_maillage
                     ai = P(ni, :) ; aj = P(nj, :)
 
 ! Teste les differents cotes de maille i
-                    if (ai(1) == 0._pr .and. aj(1) == 0._pr) then           ! Bord gauche
+                    if (ABS(ai(1)) <= tol .AND. ABS(aj(1)) <= tol) then             ! Bord gauche
                         if (1 <= probleme .AND. probleme <= 7 .OR. probleme == 9) then
                             cl_arete_bord(i) = 10
                         else if (probleme == 8 .OR. probleme == 10) then
                             cl_arete_bord(i) = 20
                         end if
-                    else if (ai(1) == L .and. aj(1) == L) then              ! Bord droit
+                    else if (L-tol <= ai(1) .AND. L-tol <= aj(1)) then              ! Bord droit
                         if (1 <= probleme .AND. probleme <= 7 .OR. probleme == 9) then
                             cl_arete_bord(i) = 11
                         else if (probleme == 8 .OR. probleme == 10) then
                             cl_arete_bord(i) = 20
                         end if
-                    else if (ai(2) == 0._pr .and. aj(2) == 0._pr          & ! Bord bas
-                    &       .or. ai(2) == H .and. aj(2) == H) then          ! Bord haut
-                        if (probleme /= 3 .AND. probleme /= 6) then         ! Condition de Neumann
+                    else if (ABS(ai(2)) <= tol .AND. ABS(aj(2)) <= 0._pr          & ! Bord bas
+                    &       .OR. H-tol <= ai(2) .AND. H-tol <= aj(2)) then          ! Bord haut
+                        if (probleme /= 3 .AND. probleme /= 6) then                 ! Condition de Neumann
                             cl_arete_bord(i) = 20
-                        else if (probleme /= 3 .AND. probleme /= 6) then    ! Condition de Dirichlet
+                        else if (probleme /= 3 .AND. probleme /= 6) then            ! Condition de Dirichlet
                             cl_arete_bord(i) = 11
                         end if
                     end if
