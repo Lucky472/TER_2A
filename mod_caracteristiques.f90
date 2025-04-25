@@ -11,10 +11,6 @@ module mod_caracteristiques
 ! de transfert thermique h)
 !       Tinit (Temperature initiale dans la plaque)
 !       Terme_source
-!
-! N.B : Le code est prevu pour pouvoir gerer 9 conditions de Dirichet et Neumann differentes
-! Pour en ajouter ou changer ces dernieres, il faut aussi modifer la subroutine cl_arete
-! du module mod_maillage
 ! ----------------------------------------------------------------------------------------------
 
     implicit none
