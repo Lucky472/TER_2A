@@ -442,11 +442,11 @@ module mod_maillage
                         else if (probleme == 8 .OR. probleme == 10) then
                             cl_arete_bord(i) = 20
                         end if
-                    else if (ABS(ai(2)) <= tol .AND. ABS(aj(2)) <= 0._pr          & ! Bord bas
+                    else if (ABS(ai(2)) <= tol .AND. ABS(aj(2)) <= tol            & ! Bord bas
                     &       .OR. H-tol <= ai(2) .AND. H-tol <= aj(2)) then          ! Bord haut
                         if (probleme /= 3 .AND. probleme /= 6) then                 ! Condition de Neumann
                             cl_arete_bord(i) = 20
-                        else if (probleme /= 3 .AND. probleme /= 6) then            ! Condition de Dirichlet
+                        else if (probleme == 3 .OR. probleme == 6) then             ! Condition de Dirichlet
                             cl_arete_bord(i) = 11
                         end if
                     end if

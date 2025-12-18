@@ -132,10 +132,10 @@ module mod_caracteristiques
 
 ! ----------------------------------------------------------------------------------------------
 ! Temperature initiale uniforme :
-!       Cas tests 1, 2, 3, 4, 5
+!       Cas tests 1, 2, 4, 5
 !       Plaque chauffante periodique
 ! ----------------------------------------------------------------------------------------------
-            if (1 <= probleme .AND. probleme <= 6) then
+            if (1 <= probleme .AND. probleme <= 5 .AND. probleme /= 3) then
                 TinitGi = 100._pr
 
 ! ----------------------------------------------------------------------------------------------
@@ -186,7 +186,7 @@ module mod_caracteristiques
 ! ----------------------------------------------------------------------------------------------
 ! Plaque chauffante - Coefficient d'echange thermique
 ! ----------------------------------------------------------------------------------------------
-            else if (probleme == 8 .OR. probleme == 10) then
+            else if (probleme == 3 .OR. probleme == 6 .OR. probleme == 8 .OR. probleme == 10) then
                 TinitGi = Tinf
             
 ! ----------------------------------------------------------------------------------------------
@@ -232,14 +232,25 @@ module mod_caracteristiques
 
 ! ----------------------------------------------------------------------------------------------
 ! Plaque chauffante circurlaire
+! ----------------------------------------------------------------------------------------------
+            else if (probleme == 3 .OR. probleme == 6) then
+                if (cl_arete_bord(e) == 10) then
+! On est sur le bord gauche
+                    TbXe = Tinf
+                else if (cl_arete_bord(e) == 11) then
+! On est sur le bord droit, haut ou bas
+                    TbXe = Tinf
+                end if
+
+! ----------------------------------------------------------------------------------------------
 ! Solution manufacturee
 ! ----------------------------------------------------------------------------------------------
-            else if (probleme == 3 .OR. probleme == 4 .OR. probleme == 6) then
+            else if (probleme == 4) then
                 if (cl_arete_bord(e) == 10) then
 ! On est sur le bord gauche
                     TbXe = 100._pr
                 else if (cl_arete_bord(e) == 11) then
-! On est sur le bord droit, haut et bas
+! On est sur le bord droit
                     TbXe = 300._pr
                 end if
 

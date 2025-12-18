@@ -12,3 +12,6 @@ $(EXE) : mod_precision.o mod_caracteristiques.o mod_tri_maillage.o mod_maillage.
 
 clean :
 	rm -f *.mod *.o SORTIE/*.vtk $(EXE)
+
+clean_sortie :
+	rm -f SORTIE/*.vtk

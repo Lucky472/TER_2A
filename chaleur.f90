@@ -52,7 +52,7 @@ program chaleur
     allocate(Tn(1:nb_mailles)) ; allocate(Tnp1(1:nb_mailles))
 
 ! Initialisation du temps max
-    tmax = 1._pr
+    tmax = 0.5_pr
 
 ! ----------------------------------------------------------------------------------------------
 ! Choix du schema temporel
@@ -190,7 +190,7 @@ program chaleur
 ! ----------------------------------------------------------------------------------------------
     case (2)
 
-        dt = 0.05_pr
+        dt = 0.01_pr
         tol = 1e-10
 
         call make_A_CSR(probleme, dt, nb_mailles, aire_maille, l_arete, d_arete, milieu_arete, ar,                    &
